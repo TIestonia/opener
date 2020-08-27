@@ -1,0 +1,61 @@
+#!/usr/bin/env node
+void require("j6pack/register")
+process.title = "opener/web"
+
+var _ = require("root/lib/underscore")
+var Fs = require("fs")
+var Url = require("url")
+var Http = require("http")
+var Express = require("express")
+var Config = require("root/config")
+var HttpError = require("standard-http-error")
+var PORT = process.env.PORT || 2718
+
+var app = module.exports = Express()
+app.enable("trust proxy", "loopback")
+app.engine(".jsx", require("j6pack/express"))
+app.set("views", __dirname + "/../views")
+
+app.use(Express.static(__dirname + "/../public"))
+app.use((req, res, next) => { res.locals.req = req; next() })
+
+app.use(require("cookie-parser")(Config.cookieSecret))
+
+app.get("/", (_req, res) => res.redirect("/procurements"))
+
+_.each({
+	"/organizations": require("../controllers/organizations_controller").router,
+	"/procurements": require("../controllers/procurements_controller").router
+}, (router, path) => app.use(path, router))
+
+app.use(function(_req, _res, next) { next(new HttpError(404)) })
+
+app.use(require("root/lib/middleware/error_handler_middleware").bind(null,
+	function(err, _req, res) {
+	if (!(err instanceof HttpError)) res.render("error_page.jsx", {
+		body: "Something unexpected occurred. Please try again or let us know."
+	})
+
+	res.render("error_page.jsx", {
+		title: err.message,
+		body: err.description
+	})
+}))
+
+if (module.parent) return
+runServer(app, PORT)
+
+function runServer(app, port) {
+	if (!isFinite(port) && Fs.existsSync(port) && Fs.lstatSync(port).isSocket())
+		Fs.unlinkSync(port)
+
+	Http.createServer(app).listen(port, function() {
+		// Make world-writable to allow the web server to read and write to it.
+		if (!isFinite(port)) Fs.chmodSync(port, 0o777)
+		var addr = this.address()
+
+		console.info("Listening on %s.", typeof addr == "string"
+			? addr
+			: Url.format({protocol: "http", hostname: addr.address, port: addr.port}))
+	})
+}

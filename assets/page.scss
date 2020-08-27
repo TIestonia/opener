@@ -1,0 +1,158 @@
+@import "reset";
+$page-width: 100rem;
+$page-padding: 6rem;
+$body-font: Helvetica, Arial, sans-serif;
+$link-blue: #0078ff;
+$blue: #0000F0;
+$dark-grey: #323334;
+$light-grey: #f0f1f2;
+$purple: #331e42;
+
+body {
+	background-color: white;
+	color: $dark-grey;
+	font-family: $body-font;
+	font-size: 1.4rem;
+	color: black;
+}
+
+strong {
+	font-weight: bold;
+}
+
+.centered {
+	max-width: $page-width;
+	margin: 0 auto;
+	padding: 0 $page-padding;
+}
+
+section.centered {
+	padding-top: 4rem;
+	padding-bottom: 4rem;
+}
+
+.page-heading {
+	font-size: 3.6rem;
+	color: $purple;
+	line-height: 1.5;
+}
+
+.link-button {
+	color: $blue;
+	text-decoration: underline;
+}
+
+.opener-table {
+	th, td {
+		line-height: 1.5;
+		padding: 0 1rem;
+	}
+
+	th { font-weight: bold; }
+}
+
+#nav {
+	padding: 2rem 0;
+	line-height: 3rem;
+	color: white;
+	background: $purple;
+
+	.home {
+		font-weight: bold;
+		font-size: 1.8rem;
+		display: inline-block;
+		vertical-align: middle;
+
+		&:focus { outline: 1px dashed rgba(white, 0.8); }
+	}
+
+	menu {
+		display: inline-block;
+		margin-left: 2rem;
+
+		li { display: inline-block; }
+	}
+
+	menu a {
+		margin-left: 0.5rem;
+		border-radius: 0.3rem;
+		border: 1px solid transparent;
+		font-size: 1.3rem;
+		display: inline-block;
+		padding: 0 1rem;
+
+		&.selected {
+			color: $purple;
+			background-color: white;
+			font-weight: bold;
+		}
+
+		&:focus { border: 1px dashed rgba(white, 0.8); }
+		&:hover { border-color: white; }
+	}
+}
+
+#header {
+	padding: 4rem 0 4rem;
+	line-height: 1;
+	background: $purple;
+	color: white;
+	font-size: 4.8rem;
+}
+
+#procurements-page main {
+	.procurements {
+		h2 {
+			font-size: 2rem;
+			color: $purple;
+			line-height: 1.5;
+
+			.buyer-name {
+				color: #666;
+			}
+		}
+
+		.procurement + .procurement {
+			margin-top: 2rem;
+		}
+	}
+}
+
+#procurement-page main {
+	#header {
+		.buyer-name {
+			display: block;
+			margin-top: 1rem;
+			font-size: 2.4rem;
+		}
+	}
+
+	.properties {
+		th, td {
+			line-height: 1.5;
+			padding: 0 1rem;
+		}
+
+		th { font-weight: bold; }
+	}
+
+
+}
+
+#organizations-page {
+	.organizations {
+		h2 {
+			font-size: 2rem;
+			color: $purple;
+			line-height: 1.5;
+
+			.buyer-name {
+				color: #666;
+			}
+		}
+
+		.organization + .organization {
+			margin-top: 2rem;
+		}
+	}
+}

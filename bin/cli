@@ -1,0 +1,51 @@
+#!/usr/bin/env node
+process.title = "opener/cli"
+if (process.env.ENV == null) process.env.ENV = "development"
+
+var Neodoc = require("neodoc")
+var concat = Array.prototype.concat.bind(Array.prototype)
+var inspect = require("util").inspect
+
+var USAGE_TEXT = `
+Usage: cli [options] [<command> [<args>...]]
+
+Options:
+    -h, --help           Display this help and exit.
+
+Commands:
+    import               Import procurements and related data.
+
+For more help or to give feedback, please see https://opener.ee.
+`
+
+var args = Neodoc.run(USAGE_TEXT, {optionsFirst: true, versionFlags: []})
+if (args["--help"]) return void process.stdout.write(USAGE_TEXT.trimLeft())
+
+var cmd = args["<command>"]
+if (cmd == null) return void process.stdout.write(USAGE_TEXT.trimLeft())
+
+var co = require("co")
+
+var CLIS = {
+  import: require.resolve("root/cli/import_cli")
+}
+
+var cmdPath = CLIS[cmd]
+if (cmdPath == null) return void die("No such command: %s", cmd)
+
+co(function*() {
+	yield require(cmdPath)(concat(cmd, args["<args>"]))
+}).catch(handleError)
+
+function handleError(err) {
+  console.error(color(err))
+	console.error(err.stack.replace(/^[^\n]+\n/, ""))
+	process.exitCode = 1
+}
+
+function die() {
+	console.error.apply(console, arguments)
+	process.exit(2)
+}
+
+function color(obj) { return inspect(obj, {depth: null, colors: true}) }

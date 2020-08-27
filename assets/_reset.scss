@@ -1,0 +1,126 @@
+/**
+ * Eric Meyer's Reset CSS v2.0 (http://meyerweb.com/eric/tools/css/reset/)
+ */
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center, hr,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+main, article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+}
+
+main, article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+
+* {
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+html {
+	font-size: 62.5%;
+
+	// Without an explicit text-align, Internet Explorer (9 at least) has no
+	// text-align value to inherit from.
+	text-align: left;
+}
+
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+th {
+	text-align: inherit;
+}
+
+li {
+	list-style-type: none;
+}
+
+a {
+	color: inherit;
+	text-decoration: inherit;
+	outline: 0;
+}
+
+// NOTE: Don't disable outline or set outline-offset for inputs, as that will
+// remove the focus blur from native-looking inputs.
+input,
+textarea,
+button,
+select {
+	margin: 0;
+	padding: 0;
+
+	// Inheritng the whole font property will change line-height.
+	font-family: inherit;
+	font-size: inherit;
+	font-weight: inherit;
+	color: inherit;
+}
+
+input,
+textarea {
+	// Reset any ancestor disabling:
+	-moz-user-select: text;
+}
+
+textarea {
+	line-height: inherit;
+	resize: none;
+}
+
+a,
+button,
+select,
+input[type=submit],
+input[type=checkbox] {
+	cursor: pointer;
+
+	&:disabled { cursor: auto; }
+}
+
+button::-moz-focus-inner,
+input::-moz-focus-inner {
+	padding: 0;
+	border: 0;
+}
+
+blockquote,
+q {
+	quotes: none;
+}
+
+blockquote:before,
+blockquote:after,
+q:before,
+q:after {
+	content: "";
+	content: none;
+}
+
+// Browsers by default only hide [hidden] elements that have no display
+// property.
+[hidden] { display: none !important; }
+td[hidden] { display: table-cell !important; visibility: hidden; }
+
+// https://stackoverflow.com/questions/17408815/fieldset-resizes-wrong-appears-to-have-unremovable-min-width-min-content
+fieldset { min-width: 0; }
+@-moz-document url-prefix() { fieldset { display: table-cell; }}

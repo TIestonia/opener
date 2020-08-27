@@ -1,0 +1,5 @@
+/node_modules/
+/config/production.json
+/config/*.sqlite3
+/public/assets/*.css
+/tmp/
