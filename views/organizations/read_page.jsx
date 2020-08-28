@@ -7,16 +7,7 @@ var Paths = require("root/lib/paths")
 var {Header} = Page
 var {Heading} = Page
 var {Section} = Page
-var formatDateTime = require("date-fns/format")
-
-var ROLES = {
-	JUHE: "Chairman of the board",
-	JUHL: "Management board member",
-	D: "Auditor",
-	N: "Member of the supervisory board",
-	E: "Chairman of the supervisory board",
-	PROK: "Procurator"
-}
+var ROLES = require("root/lib/procurement").ORGANIZATION_ROLES
 
 module.exports = function(attrs) {
 	var organization = attrs.organization
@@ -110,13 +101,21 @@ module.exports = function(attrs) {
 				</thead>
 
 				<tbody>{people.map(function(person) {
+					var personPath = Paths.personPath({
+						country: person.person_country,
+						id: person.person_id
+					})
+
 					return <tr>
-						<td>{person.person_name}</td>
+						<td><a href={personPath} class="link-button">
+							{person.person_name}
+						</a></td>
+
 						<td>{ROLES[person.role]}</td>
-						<td>{formatIsoDate(person.started_at)}</td>
+						<td>{_.formatIsoDate(person.started_at)}</td>
 
 						<td>{person.ended_at
-							? formatIsoDate(DateFns.addDays(person.ended_at, -1))
+							? _.formatIsoDate(DateFns.addDays(person.ended_at, -1))
 							: null
 						}</td>
 					</tr>
@@ -125,6 +124,3 @@ module.exports = function(attrs) {
 		</Section> : null}
 	</Page>
 }
-
-
-function formatIsoDate(time) { return formatDateTime(time, "YYYY-MM-DD") }

@@ -115,6 +115,34 @@ CREATE TABLE organization_people (
 	FOREIGN KEY (person_country, person_id)
 	REFERENCES people (country, id)
 );
+CREATE TABLE political_parties (
+	id INTEGER PRIMARY KEY NOT NULL,
+	country TEXT NOT NULL,
+	name TEXT COLLATE NOCASE NOT NULL,
+
+	CONSTRAINT country_format CHECK (country GLOB '[A-Z][A-Z]'),
+	CONSTRAINT name_length CHECK (length(name) > 0)
+);
+CREATE TABLE political_party_donations (
+	date TEXT NOT NULL,
+	party_id INTEGER NOT NULL,
+	donator_name TEXT COLLATE NOCASE NOT NULL,
+	donator_birthdate TEXT NOT NULL,
+	amount INTEGER NOT NULL,
+	currency TEXT NOT NULL,
+
+	FOREIGN KEY (party_id) REFERENCES political_parties (id),
+
+	CONSTRAINT donator_name_length CHECK (length(donator_name) > 0),
+
+	CONSTRAINT currency_format CHECK (currency GLOB '[A-Z][A-Z][A-Z]')
+
+	CONSTRAINT date_format
+	CHECK (date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+
+	CONSTRAINT donator_birthdate_format
+	CHECK (donator_birthdate GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]')
+);
 
 PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
@@ -125,4 +153,6 @@ INSERT INTO migrations VALUES('20200824174840');
 INSERT INTO migrations VALUES('20200827130022');
 INSERT INTO migrations VALUES('20200827130628');
 INSERT INTO migrations VALUES('20200827130844');
+INSERT INTO migrations VALUES('20200828085756');
+INSERT INTO migrations VALUES('20200828091757');
 COMMIT;

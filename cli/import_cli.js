@@ -4,6 +4,8 @@ var Cli = require("root/lib/cli")
 var organizationsDb = require("root/db/organizations_db")
 var procurementsDb = require("root/db/procurements_db")
 var contractsDb = require("root/db/procurement_contracts_db")
+var partiesDb = require("root/db/political_parties_db")
+var donationsDb = require("root/db/political_party_donations_db")
 var co = require("co")
 var sql = require("sqlate")
 var sqlite = require("root").sqlite
@@ -13,8 +15,9 @@ var COUNTRY_CODES = require("root/lib/country_codes")
 
 var USAGE_TEXT = `
 Usage: cli import (-h | --help)
-       cli import [options] procurements [<path>|-]
-       cli import [options] procurement-contracts [<path>|-]
+       cli import [options] procurements (<path>|-)
+       cli import [options] procurement-contracts (<path>|-)
+       cli import [options] political-party-donations <name> (<path>|-)
 
 Options:
     -h, --help   Display this help and exit.
@@ -39,16 +42,20 @@ module.exports = function*(argv) {
 	var cmd
 	if (args.procurements) cmd = "procurements"
 	else if (args["procurement-contracts"]) cmd = "procurement-contracts"
+	else if (args["political-party-donations"]) cmd = "political-party-donations"
 	else return void process.stdout.write(USAGE_TEXT.trimLeft())
 
 	var path
 	if (args["-"]) path = ["-"]
 	else if ("<path>" in args) path = args["<path>"]
-	if (path == null) return void process.stdout.write(USAGE_TEXT.trimLeft())
 
 	switch (cmd) {
 		case "procurements": yield importProcurements(path); break
 		case "procurement-contracts": yield importProcurementContracts(path); break
+
+		case "political-party-donations":
+			yield importPoliticalPartyDonations(args["<name>"], path)
+			break
 	}
 }
 
@@ -184,6 +191,35 @@ function* importProcurementContracts(path) {
 			cost_currency: obj.lep_maks_salastatud == "Ei"
 				? "EUR"
 				: null,
+		})
+	}))
+
+	yield sqlite(sql`COMMIT`)
+}
+
+function* importPoliticalPartyDonations(partyName, path) {
+	yield sqlite(sql`BEGIN`)
+
+	var party = yield partiesDb.read(sql`
+		SELECT * FROM political_parties
+		WHERE country = 'EE' AND name = ${partyName}
+	`)
+
+	if (party == null) party = yield partiesDb.create({
+		country: "EE",
+		name: partyName
+	})
+
+	yield Cli.stream(Cli.readCsv(path, {delimiter: ";"}), co.wrap(function*(obj) {
+		if (obj.Tululiik != "Rahaline annetus") return
+
+		yield donationsDb.create({
+			party_id: party.id,
+			date: _.parseEstonianDate(obj["Laekumise kuupäev"]),
+			donator_name: obj["Tasuja nimi"],
+			donator_birthdate: _.parseEstonianDate(obj["Registry Code / Birth Date"]),
+			amount: Number(obj["Laekunud summa"].replace(" ", "")),
+			currency: "EUR"
 		})
 	}))
 
