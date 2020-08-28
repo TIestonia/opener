@@ -101,8 +101,39 @@ section.centered {
 }
 
 #procurements-page main {
-	.procurements {
+	#filter {
+		padding-bottom: 2rem;
+		margin-bottom: 2rem;
+		border-bottom: 1px solid $light-grey;
+
+		button[type=submit] {
+			margin-top: 0.5rem;
+		}
+
+		.attributes {
+			input,
+			select {
+				margin-left: 0.5rem;
+			}
+
+			li + li {
+				margin-top: 0.5rem;
+			}
+		}
+
+		.predefined-filters {
+			margin-top: 2rem;
+		}
+	}
+
+	#procurement-groups {
 		h2 {
+			text-transform: capitalize;
+		}
+	}
+
+	.procurements {
+		h3 {
 			font-size: 2rem;
 			color: $purple;
 			line-height: 1.5;

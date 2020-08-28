@@ -33,7 +33,7 @@ module.exports = function(attrs) {
 					action={path}
 					method="get"
 				>
-					<ul>
+					<ul class="attributes">
 						<li>
 							Bidder Count is
 							{" "}
@@ -73,10 +73,10 @@ module.exports = function(attrs) {
 						</li>
 					</ul>
 
-					<button>Filter</button>
+					<button type="submit">Filter</button>
 				</form>
 
-				<ul>
+				<ul class="predefined-filters">
 					<li>
 						<a href={path + "?bidding-duration<14d"} class="link-button">
 							Very Short Procurements
@@ -103,7 +103,7 @@ module.exports = function(attrs) {
 				</ul>
 			</div>
 
-			{STATUSES.map(function(type) {
+			<div id="procurement-groups">{STATUSES.map(function(type) {
 				var procurements = groupedProcurements[type]
 				if (procurements == null) return null
 
@@ -111,7 +111,7 @@ module.exports = function(attrs) {
 					<Heading>{type}</Heading>
 					<ProcurementList procurements={procurements} />
 				</Fragment>
-			})}
+			})}</div>
 		</Section>
 	</Page>
 }
@@ -121,11 +121,11 @@ function ProcurementList(attrs) {
 
 	return <ol class="procurements">{procurements.map(function(procurement) {
 		return <li class="procurement">
-			<h2>
+			<h3>
 				<a href={Paths.procurementPath(procurement)}>{procurement.title}</a>
 				{" — "}
 				<span class="buyer-name">{procurement.buyer_name}</span>
-			</h2>
+			</h3>
 
 			<ul>
 				{procurement.contract_count > 0 ? <li>
