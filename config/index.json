@@ -1,3 +1,5 @@
 {
-	"cookieSecret": null
+	"cookieSecret": null,
+	"estonianBusinessRegisterUser": null,
+	"estonianBusinessRegisterPassword": null
 }

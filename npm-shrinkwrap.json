@@ -441,6 +441,11 @@
       "from": "https://registry.npmjs.org/fetch-defaults/-/fetch-defaults-1.0.0.tgz",
       "resolved": "https://registry.npmjs.org/fetch-defaults/-/fetch-defaults-1.0.0.tgz"
     },
+    "fetch-error": {
+      "version": "1.0.0",
+      "from": "https://registry.npmjs.org/fetch-error/-/fetch-error-1.0.0.tgz",
+      "resolved": "https://registry.npmjs.org/fetch-error/-/fetch-error-1.0.0.tgz"
+    },
     "fetch-off": {
       "version": "1.5.0",
       "from": "fetch-off@1.5.0",
@@ -477,6 +482,16 @@
           }
         }
       }
+    },
+    "fetch-parse": {
+      "version": "1.1.0",
+      "from": "https://registry.npmjs.org/fetch-parse/-/fetch-parse-1.1.0.tgz",
+      "resolved": "https://registry.npmjs.org/fetch-parse/-/fetch-parse-1.1.0.tgz"
+    },
+    "fetch-throw": {
+      "version": "1.0.0",
+      "from": "https://registry.npmjs.org/fetch-throw/-/fetch-throw-1.0.0.tgz",
+      "resolved": "https://registry.npmjs.org/fetch-throw/-/fetch-throw-1.0.0.tgz"
     },
     "heaven": {
       "version": "0.11.0",

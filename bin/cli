@@ -13,7 +13,8 @@ Options:
     -h, --help           Display this help and exit.
 
 Commands:
-    import               Import procurements and related data.
+    import                      Import procurements and related data.
+    estonian-business-register  Sync with the Estonian Business Register.
 
 For more help or to give feedback, please see https://opener.ee.
 `
@@ -24,10 +25,14 @@ if (args["--help"]) return void process.stdout.write(USAGE_TEXT.trimLeft())
 var cmd = args["<command>"]
 if (cmd == null) return void process.stdout.write(USAGE_TEXT.trimLeft())
 
+var FetchError = require("fetch-error")
 var co = require("co")
 
 var CLIS = {
-  import: require.resolve("root/cli/import_cli")
+  import:
+		require.resolve("root/cli/import_cli"),
+  "estonian-business-register":
+		require.resolve("root/cli/estonian_business_register_cli")
 }
 
 var cmdPath = CLIS[cmd]
@@ -39,6 +44,12 @@ co(function*() {
 
 function handleError(err) {
   console.error(color(err))
+
+	if (err instanceof FetchError) {
+		console.error(color(err.request))
+		console.error(color(err.response))
+	}
+
 	console.error(err.stack.replace(/^[^\n]+\n/, ""))
 	process.exitCode = 1
 }

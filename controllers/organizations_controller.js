@@ -1,6 +1,7 @@
 var Router = require("express").Router
 var HttpError = require("standard-http-error")
 var organizationsDb = require("root/db/organizations_db")
+var orgPeopleDb = require("root/db/organization_people_db")
 var procurementsDb = require("root/db/procurements_db")
 var contractsDb = require("root/db/procurement_contracts_db")
 var sql = require("sqlate")
@@ -47,6 +48,15 @@ exports.router.use(ID_PATH, next(function*(req, _res, next) {
 exports.router.get(ID_PATH, next(function*(req, res) {
 	var organization = req.organization
 
+	var people = yield orgPeopleDb.search(sql`
+		SELECT role.*, person.name AS person_name
+		FROM organization_people AS role
+		JOIN people AS person
+		ON person.country = role.person_country AND person.id = role.person_id
+		WHERE organization_country = ${organization.country}
+		AND organization_id = ${organization.id}
+	`)
+
 	var procurements = yield procurementsDb.search(sql`
 		SELECT * FROM procurements
 		WHERE buyer_country = ${organization.country}
@@ -66,6 +76,7 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 
 	res.render("organizations/read_page.jsx", {
 		organization: organization,
+		people: people,
 		procurements: procurements,
 		contracts: contracts
 	})

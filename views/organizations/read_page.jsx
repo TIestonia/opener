@@ -2,13 +2,25 @@
 var _ = require("root/lib/underscore")
 var Jsx = require("j6pack")
 var Page = require("../page")
+var DateFns = require("date-fns")
 var Paths = require("root/lib/paths")
 var {Header} = Page
 var {Heading} = Page
 var {Section} = Page
+var formatDateTime = require("date-fns/format")
+
+var ROLES = {
+	JUHE: "Chairman of the board",
+	JUHL: "Management board member",
+	D: "Auditor",
+	N: "Member of the supervisory board",
+	E: "Chairman of the supervisory board",
+	PROK: "Procurator"
+}
 
 module.exports = function(attrs) {
 	var organization = attrs.organization
+	var people = attrs.people
 	var procurements = attrs.procurements
 	var contracts = attrs.contracts
 
@@ -86,5 +98,33 @@ module.exports = function(attrs) {
 				})}</tbody>
 			</table>
 		</Section> : null}
+
+		{people.length > 0 ? <Section>
+			<Heading>People</Heading>
+			<table class="opener-table people">
+				<thead>
+					<th>Name</th>
+					<th>Role</th>
+					<th>From</th>
+					<th>Until</th>
+				</thead>
+
+				<tbody>{people.map(function(person) {
+					return <tr>
+						<td>{person.person_name}</td>
+						<td>{ROLES[person.role]}</td>
+						<td>{formatIsoDate(person.started_at)}</td>
+
+						<td>{person.ended_at
+							? formatIsoDate(DateFns.addDays(person.ended_at, -1))
+							: null
+						}</td>
+					</tr>
+				})}</tbody>
+			</table>
+		</Section> : null}
 	</Page>
 }
+
+
+function formatIsoDate(time) { return formatDateTime(time, "YYYY-MM-DD") }

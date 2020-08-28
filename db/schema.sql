@@ -1,7 +1,7 @@
 CREATE TABLE organizations (
 	country TEXT NOT NULL,
 	id TEXT NOT NULL,
-	name TEXT COLLATE NOCASE NOT NULL,
+	name TEXT COLLATE NOCASE NOT NULL, business_register_data TEXT, business_register_synced_at TEXT,
 
 	PRIMARY KEY (country, id),
 
@@ -90,6 +90,31 @@ CREATE TABLE procurement_contracts (
 	CONSTRAINT cost_currency_format
 	CHECK (cost_currency GLOB '[A-Z][A-Z][A-Z]')
 );
+CREATE TABLE people (
+	country TEXT NOT NULL,
+	id TEXT NOT NULL,
+	name TEXT COLLATE NOCASE NOT NULL,
+
+	PRIMARY KEY (country, id),
+
+	CONSTRAINT country_format CHECK (country GLOB '[A-Z][A-Z]'),
+	CONSTRAINT name_length CHECK (length(name) > 0)
+);
+CREATE TABLE organization_people (
+	organization_country TEXT NOT NULL,
+	organization_id TEXT NOT NULL,
+	person_country TEXT NOT NULL,
+	person_id TEXT NOT NULL,
+	role TEXT NOT NULL,
+	started_at TEXT NOT NULL,
+	ended_at TEXT,
+
+	FOREIGN KEY (organization_country, organization_id)
+	REFERENCES organizations (country, id),
+
+	FOREIGN KEY (person_country, person_id)
+	REFERENCES people (country, id)
+);
 
 PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
@@ -97,4 +122,7 @@ CREATE TABLE migrations (version TEXT PRIMARY KEY NOT NULL);
 INSERT INTO migrations VALUES('20200824174820');
 INSERT INTO migrations VALUES('20200824174830');
 INSERT INTO migrations VALUES('20200824174840');
+INSERT INTO migrations VALUES('20200827130022');
+INSERT INTO migrations VALUES('20200827130628');
+INSERT INTO migrations VALUES('20200827130844');
 COMMIT;
