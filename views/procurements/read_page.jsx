@@ -127,7 +127,7 @@ module.exports = function(attrs) {
 						id: contract.seller_id
 					})
 
-					return <tr>
+					return <tr id={"contract-" + contract.id}>
 						<td>{contract.nr}</td>
 						<td>{contract.title}</td>
 

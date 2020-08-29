@@ -5,6 +5,13 @@ exports = module.exports = new Db(Object, sqlite, "political_party_donations")
 exports.idAttribute = null
 exports.idColumn = null
 
+exports.parse = function(attrs) {
+	return _.defaults({
+		donator_birthdate: attrs.donator_birthdate &&
+			_.parseIsoDate(attrs.donator_birthdate)
+	}, attrs)
+}
+
 exports.serialize = function(attrs) {
 	var obj = _.clone(attrs)
 

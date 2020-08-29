@@ -1,3 +1,4 @@
+var _ = require("root/lib/underscore")
 var Config = require("root/config")
 var Neodoc = require("neodoc")
 var DateFns = require("date-fns")
@@ -65,6 +66,19 @@ module.exports = function*(argv) {
 	for (var i = 0; i < entries.length; ++i) {
 		var entry = entries[i]
 		var id = entry.isikukood_registrikood
+		var name = entry.eesnimi + " " + entry.nimi_arinimi
+
+		if (isMissing(id)) {
+			// AS G4S Eesti has a chairman of the supervisory board that only
+			// includes a foreign id, though with no country for context.
+			console.warn(
+				"Missing personal id for %s (entry %s).",
+				name,
+				entry.kirje_id
+			)
+
+			continue
+		}
 
 		var person = yield peopleDb.read(sql`
 			SELECT * FROM people
@@ -74,7 +88,9 @@ module.exports = function*(argv) {
 		if (person == null) person = yield peopleDb.create({
 			country: "EE",
 			id: id,
-			name: entry.eesnimi + " " + entry.nimi_arinimi
+			name: name,
+			normalized_name: _.normalizeName(name),
+			birthdate: _.birthdateFromPersonalId(id)
 		})
 
 		yield orgPeopleDb.create({
@@ -149,4 +165,10 @@ function parseDateFromRegisterTimestamp(time) {
 	// offset by one hour from midnight UTC.
 	var utc = new Date(time * 1000)
 	return new Date(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate())
+}
+
+function isMissing(value) {
+	// The Estonian Business Register for some reason includes non-existent or
+	// non-appicable XML properties for tags as empty objects.
+	return typeof value == "object" && _.isEmpty(value)
 }

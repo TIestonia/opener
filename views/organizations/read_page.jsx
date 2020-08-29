@@ -57,6 +57,7 @@ module.exports = function(attrs) {
 			<Heading>Contracts</Heading>
 			<table class="opener-table contracts">
 				<thead>
+					<th>Date</th>
 					<th>Procurement</th>
 					<th>Title</th>
 					<th>Estimated Cost</th>
@@ -70,6 +71,8 @@ module.exports = function(attrs) {
 					})
 
 					return <tr>
+						<td>{_.formatIsoDate(contract.created_at)}</td>
+
 						<td><a href={procurementPath} class="link-button">
 							{contract.procurement_title}
 						</a></td>

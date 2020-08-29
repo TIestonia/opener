@@ -49,6 +49,10 @@ section.centered {
 	}
 
 	th { font-weight: bold; }
+
+	small {
+		font-size: 0.9em;
+	}
 }
 
 #nav {
@@ -185,5 +189,11 @@ section.centered {
 		.organization + .organization {
 			margin-top: 2rem;
 		}
+	}
+}
+
+#procurement-contracts-page main {
+	.queries {
+		margin-bottom: 2rem;
 	}
 }

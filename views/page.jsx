@@ -37,6 +37,13 @@ function Page(attrs, children) {
 							</a></li>
 
 							<li><a
+								href="/procurement-contracts"
+								class={prefixed("/procurement-contracts/", path)}
+							>
+								Contracts
+							</a></li>
+
+							<li><a
 								href="/organizations"
 								class={prefixed("/organizations/", path)}
 							>

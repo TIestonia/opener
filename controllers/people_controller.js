@@ -24,7 +24,6 @@ exports.router.use(ID_PATH, next(function*(req, _res, next) {
 
 exports.router.get(ID_PATH, next(function*(req, res) {
 	var person = req.person
-	var birthdate = _.birthdateFromPersonalId(person.id)
 
 	var roles = yield orgPeopleDb.search(sql`
 		SELECT role.*, org.name AS organization_name
@@ -42,8 +41,8 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 		FROM political_party_donations AS donation
 		JOIN political_parties AS party ON party.id = donation.party_id
 		WHERE party.country = ${person.country}
-		AND donator_name = ${person.name.toUpperCase()}
-		AND donator_birthdate = ${_.formatIsoDate(birthdate)}
+		AND donator_normalized_name = ${person.normalized_name}
+		AND donator_birthdate = ${_.formatIsoDate(person.birthdate)}
 	`)
 
 	res.render("people/read_page.jsx", {

@@ -94,11 +94,17 @@ CREATE TABLE people (
 	country TEXT NOT NULL,
 	id TEXT NOT NULL,
 	name TEXT COLLATE NOCASE NOT NULL,
+	normalized_name TEXT NOT NULL,
+	birthdate TEXT NOT NULL,
 
 	PRIMARY KEY (country, id),
 
 	CONSTRAINT country_format CHECK (country GLOB '[A-Z][A-Z]'),
 	CONSTRAINT name_length CHECK (length(name) > 0)
+	CONSTRAINT normalized_name_length CHECK (length(normalized_name) > 0),
+
+	CONSTRAINT birthdate_format
+	CHECK (birthdate GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]')
 );
 CREATE TABLE organization_people (
 	organization_country TEXT NOT NULL,
@@ -127,6 +133,7 @@ CREATE TABLE political_party_donations (
 	date TEXT NOT NULL,
 	party_id INTEGER NOT NULL,
 	donator_name TEXT COLLATE NOCASE NOT NULL,
+	donator_normalized_name TEXT NOT NULL,
 	donator_birthdate TEXT NOT NULL,
 	amount INTEGER NOT NULL,
 	currency TEXT NOT NULL,
@@ -134,6 +141,9 @@ CREATE TABLE political_party_donations (
 	FOREIGN KEY (party_id) REFERENCES political_parties (id),
 
 	CONSTRAINT donator_name_length CHECK (length(donator_name) > 0),
+
+	CONSTRAINT donator_normalized_name_length
+	CHECK (length(donator_normalized_name) > 0),
 
 	CONSTRAINT currency_format CHECK (currency GLOB '[A-Z][A-Z][A-Z]')
 

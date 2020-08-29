@@ -217,6 +217,7 @@ function* importPoliticalPartyDonations(partyName, path) {
 			party_id: party.id,
 			date: _.parseEstonianDate(obj["Laekumise kuupäev"]),
 			donator_name: obj["Tasuja nimi"],
+			donator_normalized_name: _.normalizeName(obj["Tasuja nimi"]),
 			donator_birthdate: _.parseEstonianDate(obj["Registry Code / Birth Date"]),
 			amount: Number(obj["Laekunud summa"].replace(" ", "")),
 			currency: "EUR"
