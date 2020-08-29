@@ -57,7 +57,10 @@ module.exports = function*(argv) {
 	var entries = concat(
 		info.isikuandmed.kaardile_kantud_isikud.item,
 		info.isikuandmed.kaardivalised_isikud.item
-	).filter((e) => e.isiku_tyyp == "F")
+	).filter((e) => (
+		// Only physical people (tyyp == F) and non-auditors (roll != D).
+		e.isiku_tyyp == "F" && e.isiku_roll != "D"
+	))
 
 	for (var i = 0; i < entries.length; ++i) {
 		var entry = entries[i]
