@@ -34,6 +34,10 @@ export ENV
 export PORT
 export LIVERELOAD_PORT
 
+ifneq ($(filter test spec autotest autospec test/%, $(MAKECMDGOALS)),)
+	ENV = test
+endif
+
 love:
 	@$(MAKE) -C assets
 

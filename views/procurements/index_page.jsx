@@ -3,22 +3,16 @@ var _ = require("root/lib/underscore")
 var Jsx = require("j6pack")
 var Page = require("../page")
 var Paths = require("root/lib/paths")
-var {Fragment} = require("j6pack")
 var {Header} = Page
-var {Heading} = Page
 var {Section} = Page
-var {STATUSES} = require("root/lib/procurement")
-var {PROCESS_TYPES} = require("root/lib/procurement")
+var {PROCEDURE_TYPE} = require("root/lib/procurement")
 
 module.exports = function(attrs) {
 	var req = attrs.req
 	var procurements = attrs.procurements
 	var path = req.baseUrl
-	var statusFilter = attrs.statusFilter
 	var bidderCountFilter = attrs.bidderCountFilter
-	var processTypeFilter = attrs.processTypeFilter
-
-	var groupedProcurements = _.groupBy(procurements, "status")
+	var procedureTypeFilter = attrs.procedureTypeFilter
 
 	return <Page
 		page="procurements"
@@ -45,28 +39,14 @@ module.exports = function(attrs) {
 						</li>
 
 						<li>
-							Status is
-							{" "}
-							<select name="status">
-								<option value="" selected={!statusFilter}>All</option>
-
-								{STATUSES.map((status) => <option
-									value={status}
-									selected={statusFilter == status}>
-									{status}
-								</option>)}
-							</select>
-						</li>
-
-						<li>
 							Process is
 							{" "}
 							<select name="process-type">
-								<option value="" selected={!processTypeFilter}>All</option>
+								<option value="" selected={!procedureTypeFilter}>All</option>
 
-								{_.map(PROCESS_TYPES, (title, type) => <option
+								{_.map(PROCEDURE_TYPE, (title, type) => <option
 									value={type}
-									selected={processTypeFilter == type}>
+									selected={procedureTypeFilter == type}>
 									{title}
 								</option>)}
 							</select>
@@ -103,15 +83,7 @@ module.exports = function(attrs) {
 				</ul>
 			</div>
 
-			<div id="procurement-groups">{STATUSES.map(function(type) {
-				var procurements = groupedProcurements[type]
-				if (procurements == null) return null
-
-				return <Fragment>
-					<Heading>{type}</Heading>
-					<ProcurementList procurements={procurements} />
-				</Fragment>
-			})}</div>
+			<ProcurementList procurements={procurements} />
 		</Section>
 	</Page>
 }
@@ -140,7 +112,10 @@ function ProcurementList(attrs) {
 					{procurement.bid_count} bids
 				</li> : null}
 
-				{procurement.bidding_duration >= 0 ? <li>
+				{(
+					procurement.bidding_duration != null &&
+					procurement.bidding_duration >= 0 
+				) ? <li>
 					{procurement.bidding_duration.toFixed(2)} days of bidding
 				</li> : null}
 			</ul>

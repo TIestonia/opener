@@ -8,6 +8,7 @@ var {Header} = Page
 var {Heading} = Page
 var {Section} = Page
 var ROLES = require("root/lib/procurement").ORGANIZATION_ROLES
+var HTTP_URL = /^https?:\/\//i
 
 module.exports = function(attrs) {
 	var organization = attrs.organization
@@ -17,6 +18,20 @@ module.exports = function(attrs) {
 
 	return <Page page="organization" req={attrs.req} title={organization.title}>
 		<Header>{organization.name}</Header>
+
+		<Section>
+			<table class="properties">
+				<tr>
+					<th>Registry Code</th>
+					<td>{organization.id}</td>
+				</tr>
+
+				{organization.url ? <tr>
+					<th>Website</th>
+					<td><UntrustedLink href={organization.url} /></td>
+				</tr> : null}
+			</table>
+		</Section>
 
 		{procurements.length > 0 ? <Section>
 			<Heading>Procurements</Heading>
@@ -126,4 +141,16 @@ module.exports = function(attrs) {
 			</table>
 		</Section> : null}
 	</Page>
+}
+
+function UntrustedLink(attrs, children) {
+	var href = attrs.href
+	var klass = attrs.class || ""
+	children = children ? children.filter(Boolean) : []
+	var text = children.length ? children : href
+
+	if (HTTP_URL.test(href)) return <a {...attrs} class={klass + " link-button"}>
+		{text}
+	</a>
+	else return <span class={klass}>{text}</span>
 }

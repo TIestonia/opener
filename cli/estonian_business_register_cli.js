@@ -114,9 +114,7 @@ module.exports = function*(argv) {
 		${updateSql("organizations", organizationsDb.serialize({
 			business_register_data: info,
 			business_register_synced_at: new Date
-		}))}
-
-		WHERE country = 'EE' AND id = ${orgId}
+		}))} WHERE country = 'EE' AND id = ${orgId}
 	`)
 
 	yield sqlite(sql`COMMIT`)

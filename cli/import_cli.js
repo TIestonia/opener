@@ -1,6 +1,7 @@
 var _ = require("root/lib/underscore")
 var Neodoc = require("neodoc")
 var Cli = require("root/lib/cli")
+var Ted = require("root/lib/ted")
 var organizationsDb = require("root/db/organizations_db")
 var procurementsDb = require("root/db/procurements_db")
 var contractsDb = require("root/db/procurement_contracts_db")
@@ -9,57 +10,51 @@ var donationsDb = require("root/db/political_party_donations_db")
 var co = require("co")
 var sql = require("sqlate")
 var sqlite = require("root").sqlite
-var {PRODUCT_TYPES} = require("root/lib/procurement")
-var {PROCESS_TYPES} = require("root/lib/procurement")
+var slurpStream = require("root/lib/stream").slurp
+var {ESTONIAN_PROCEDURE_TYPES} = require("root/lib/procurement")
 var COUNTRY_CODES = require("root/lib/country_codes")
 
 var USAGE_TEXT = `
 Usage: cli import (-h | --help)
        cli import [options] procurements (<path>|-)
-       cli import [options] procurement-contracts (<path>|-)
+       cli import [options] procurements-csv (<path>|-)
+       cli import [options] procurement-contracts-csv (<path>|-)
        cli import [options] political-party-donations <name> (<path>|-)
 
 Options:
     -h, --help   Display this help and exit.
 `
 
-var PROCUREMENT_STATUS = {
-	alustatud: "started",
-	eelteade: "prenotified",
-	hindamisel: "evaluating",
-	"lahenduse ootel": "waiting",
-	"liitumiseks avatud": "open",
-	"lõpetatud lepinguta": "cancelled",
-	täitmisel: "fulfilling",
-	"taotlus esitatud": "applied",
-	teostatud: "done"
-}
-
 module.exports = function*(argv) {
   var args = Neodoc.run(USAGE_TEXT, {argv: argv || ["import"]})
   if (args["--help"]) return void process.stdout.write(USAGE_TEXT.trimLeft())
-
-	var cmd
-	if (args.procurements) cmd = "procurements"
-	else if (args["procurement-contracts"]) cmd = "procurement-contracts"
-	else if (args["political-party-donations"]) cmd = "political-party-donations"
-	else return void process.stdout.write(USAGE_TEXT.trimLeft())
 
 	var path
 	if (args["-"]) path = ["-"]
 	else if ("<path>" in args) path = args["<path>"]
 
-	switch (cmd) {
-		case "procurements": yield importProcurements(path); break
-		case "procurement-contracts": yield importProcurementContracts(path); break
-
-		case "political-party-donations":
-			yield importPoliticalPartyDonations(args["<name>"], path)
-			break
-	}
+	if (args.procurements)
+		yield importProcurements(path)
+	else if (args["procurements-csv"])
+		yield importProcurementsCsv(path)
+	else if (args["procurement-contracts-csv"])
+		yield importProcurementContracts(path)
+	else if (args["political-party-donations"])
+		yield importPoliticalPartyDonations(args["<name>"], path)
+	else
+		return void process.stdout.write(USAGE_TEXT.trimLeft())
 }
 
 function* importProcurements(path) {
+	var xml = yield slurpStream(Cli.readStream(path), "utf8")
+	var esenders = Ted.parse(xml)
+
+	yield sqlite(sql`BEGIN`)
+	for (var i = 0; i < esenders.length; ++i) yield Ted.import(esenders[i])
+	yield sqlite(sql`COMMIT`)
+}
+
+function* importProcurementsCsv(path) {
 	yield sqlite(sql`BEGIN`)
 
 	yield Cli.stream(Cli.readCsv(path), co.wrap(function*(obj) {
@@ -79,9 +74,7 @@ function* importProcurements(path) {
 		yield procurementsDb.create({
 			country: "EE",
 			id: obj.viitenumber,
-			status: parseProcurementStatus(obj.hanke_seisund),
-			process_type: parseProcurementProcessType(obj.menliik_kood),
-			product_type: parseProcurementProductType(obj.hanke_liik_kood),
+			procedure_type: parseProcurementEstonianProcedureType(obj.menliik_kood),
 			title: obj.nimetus,
 			buyer_country: buyer.country,
 			buyer_id: buyer.id,
@@ -112,10 +105,7 @@ function* importProcurements(path) {
 
 			cost_currency: obj["kas lepingu maksumus on salastatud?"] == "Ei"
 				? "EUR"
-				: null,
-
-			responsible_person_name: obj.vastutav_isik,
-			responsible_person_email: obj.vastutava_epost
+				: null
 		})
 	}))
 
@@ -227,20 +217,12 @@ function* importPoliticalPartyDonations(partyName, path) {
 	yield sqlite(sql`COMMIT`)
 }
 
-function parseProcurementStatus(text) {
-	var status = PROCUREMENT_STATUS[text]
-	if (status == null) throw new RangeError("Invalid status: " + status)
-	return status
-}
-
-function parseProcurementProductType(type) {
-	// https://www.rahandusministeerium.ee/et/eesmargidtegevused/riigihangete-poliitika/kasulik-teave#cpv
-	if (type in PRODUCT_TYPES) return type
-	throw new RangeError("Invalid product type: " + type)
-}
-
-function parseProcurementProcessType(type) {
+function parseProcurementEstonianProcedureType(type) {
 	// https://www.rahandusministeerium.ee/sites/default/files/Riigihangete_poliitika/juhised/riigihangete_menetlusskeemid.pdf
-	if (type in PROCESS_TYPES) return type
-	throw new RangeError("Invalid process type: " + type)
+	if (type in ESTONIAN_PROCEDURE_TYPES) {
+		// Temporarily store the Estonian type until we've identified the proper EU
+		// process type for all.
+		return ESTONIAN_PROCEDURE_TYPES[type] || type
+	}
+	else throw new RangeError("Invalid procedure type: " + type)
 }

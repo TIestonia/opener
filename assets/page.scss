@@ -170,11 +170,9 @@ section.centered {
 
 		th { font-weight: bold; }
 	}
-
-
 }
 
-#organizations-page {
+#organizations-page main {
 	.organizations {
 		h2 {
 			font-size: 2rem;
@@ -189,6 +187,17 @@ section.centered {
 		.organization + .organization {
 			margin-top: 2rem;
 		}
+	}
+}
+
+#organization-page main {
+	.properties {
+		th, td {
+			line-height: 1.5;
+			padding: 0 1rem;
+		}
+
+		th { font-weight: bold; }
 	}
 }
 

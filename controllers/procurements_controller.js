@@ -13,8 +13,7 @@ exports.router.get("/", next(function*(req, res) {
 	var bidderCount = filters["bidder-count"]
 	var contractCount = filters["contract-count"]
 	var biddingDuration = filters["bidding-duration"]
-	var status = filters.status
-	var processType = filters["process-type"]
+	var procedureType = filters["process-type"]
 
 	var procurements = yield procurementsDb.search(sql`
 		SELECT
@@ -36,8 +35,9 @@ exports.router.get("/", next(function*(req, res) {
 
 		WHERE 1 = 1
 
-		${status != null ? sql`AND status = ${status[1]}`: sql``}
-		${processType != null ? sql`AND process_type = ${processType[1]}`: sql``}
+		${procedureType != null ? sql`
+			AND procedure_type = ${procedureType[1]}
+		`: sql``}
 
 		${bidderCount != null ? sql`
 			AND bidder_count ${bidderCount[0]} ${Number(bidderCount[1])}`
@@ -57,8 +57,7 @@ exports.router.get("/", next(function*(req, res) {
 
 	res.render("procurements/index_page.jsx", {
 		procurements,
-		statusFilter: status && status[1],
-		processTypeFilter: processType && processType[1],
+		procedureTypeFilter: procedureType && procedureType[1],
 		bidderCountFilter: bidderCount && bidderCount[1]
 	})
 }))
@@ -89,11 +88,13 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 			org.name AS seller_name
 
 		FROM procurement_contracts AS contract
+
 		LEFT JOIN organizations AS org
 		ON org.country = contract.seller_country
 		AND org.id = contract.seller_id
-		WHERE country = ${procurement.country}
-		AND procurement_id = ${procurement.id}
+
+		WHERE contract.procurement_country = ${procurement.country}
+		AND contract.procurement_id = ${procurement.id}
 	`)
 
 	res.render("procurements/read_page.jsx", {

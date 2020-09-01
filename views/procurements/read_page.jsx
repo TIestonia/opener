@@ -6,20 +6,7 @@ var Paths = require("root/lib/paths")
 var {Section} = Page
 var {Heading} = Page
 var formatDateTime = require("date-fns/format")
-var {PRODUCT_TYPES} = require("root/lib/procurement")
-var {PROCESS_TYPES} = require("root/lib/procurement")
-
-var PROCUREMENT_STATUS = {
-	"started": "Started",
-	"prenotified": "Prenotified",
-	"evaluating": "Evaluating",
-	"waiting": "Waiting for Solution",
-	"open": "Open for Submissions",
-	"cancelled": "Cancelled without Contract",
-	"fulfilling": "Fulfilling",
-	"applied": "Applied",
-	"done": "Done"
-}
+var {PROCEDURE_TYPES} = require("root/lib/procurement")
 
 module.exports = function(attrs) {
 	var procurement = attrs.procurement
@@ -41,18 +28,8 @@ module.exports = function(attrs) {
 		<Section>
 			<table class="properties">
 				<tr>
-					<th>Status</th>
-					<td>{PROCUREMENT_STATUS[procurement.status]}</td>
-				</tr>
-
-				<tr>
 					<th>Process Type</th>
-					<td>{PROCESS_TYPES[procurement.process_type]}</td>
-				</tr>
-
-				<tr>
-					<th>Product Type</th>
-					<td>{PRODUCT_TYPES[procurement.product_type]}</td>
+					<td>{PROCEDURE_TYPES[procurement.procedure_type]}</td>
 				</tr>
 
 				<tr>

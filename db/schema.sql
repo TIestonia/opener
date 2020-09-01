@@ -1,22 +1,24 @@
 CREATE TABLE organizations (
 	country TEXT NOT NULL,
 	id TEXT NOT NULL,
-	name TEXT COLLATE NOCASE NOT NULL, business_register_data TEXT, business_register_synced_at TEXT,
+	name TEXT COLLATE NOCASE NOT NULL,
+	url TEXT, business_register_data TEXT, business_register_synced_at TEXT,
 
 	PRIMARY KEY (country, id),
 
 	CONSTRAINT country_format CHECK (country GLOB '[A-Z][A-Z]'),
-	CONSTRAINT name_length CHECK (length(name) > 0)
+	CONSTRAINT name_length CHECK (length(name) > 0),
+	CONSTRAINT url_length CHECK (length(url) > 0)
 );
 CREATE TABLE procurements (
 	country TEXT NOT NULL,
 	id TEXT NOT NULL,
 	buyer_country TEXT NOT NULL,
 	buyer_id TEXT NOT NULL,
-	status TEXT NOT NULL,
-	process_type TEXT NOT NULL,
-	product_type TEXT NOT NULL,
+	procedure_type TEXT NOT NULL,
+	cpv_code TEXT,
 	title TEXT NOT NULL,
+	description TEXT NOT NULL DEFAULT '',
 	published_at TEXT NOT NULL,
 	deadline_at TEXT,
 	revealed_at TEXT,
@@ -24,8 +26,6 @@ CREATE TABLE procurements (
 	estimated_cost_currency TEXT,
 	cost REAL,
 	cost_currency TEXT,
-	responsible_person_name TEXT NOT NULL,
-	responsible_person_email TEXT NOT NULL,
 	bidder_count INTEGER NOT NULL DEFAULT 0,
 	bid_count INTEGER NOT NULL DEFAULT 0,
 	dispute_count INTEGER NOT NULL DEFAULT 0,
@@ -34,7 +34,8 @@ CREATE TABLE procurements (
 	FOREIGN KEY (buyer_country, buyer_id) REFERENCES organizations (country, id),
 
 	CONSTRAINT country_format CHECK (country GLOB '[A-Z][A-Z]'),
-	CONSTRAINT title_length CHECK (length(title) > 0)
+	CONSTRAINT title_length CHECK (length(title) > 0),
+	CONSTRAINT cpv_code_length CHECK (length(cpv_code) > 0),
 
 	CONSTRAINT estimated_cost_currency_present
 	CHECK ((estimated_cost IS NULL) = (estimated_cost_currency IS NULL)),
@@ -46,13 +47,7 @@ CREATE TABLE procurements (
 	CHECK ((cost IS NULL) = (cost_currency IS NULL)),
 
 	CONSTRAINT cost_currency_format
-	CHECK (cost_currency GLOB '[A-Z][A-Z][A-Z]'),
-
-	CONSTRAINT responsible_person_name_length
-	CHECK (length(responsible_person_name) > 0),
-
-	CONSTRAINT responsible_person_email_format
-	CHECK (responsible_person_email GLOB '*?@?*')
+	CHECK (cost_currency GLOB '[A-Z][A-Z][A-Z]')
 );
 CREATE TABLE procurement_contracts (
 	id INTEGER PRIMARY KEY NOT NULL,
