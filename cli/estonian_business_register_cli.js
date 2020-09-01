@@ -59,8 +59,9 @@ module.exports = function*(argv) {
 		info.isikuandmed.kaardile_kantud_isikud.item,
 		info.isikuandmed.kaardivalised_isikud.item
 	).filter((e) => (
-		// Only physical people (tyyp == F) and non-auditors (roll != D).
-		e.isiku_tyyp == "F" && e.isiku_roll != "D"
+		// Only physical people (tyyp == F) and board-level. That is, no auditors
+		// (D) nor stockholders (S). non-stockholders (roll != S).
+		e.isiku_tyyp == "F" && e.isiku_roll != "D" && e.isiku_roll != "S"
 	))
 
 	for (var i = 0; i < entries.length; ++i) {
