@@ -1,17 +1,24 @@
 /** @jsx Jsx */
 var _ = require("root/lib/underscore")
 var Jsx = require("j6pack")
+var {Fragment} = Jsx
 var Page = require("../page")
 var Paths = require("root/lib/paths")
+var Procurement = require("root/lib/procurement")
 var {Section} = Page
 var {Heading} = Page
 var formatDateTime = require("date-fns/format")
 var {PROCEDURE_TYPES} = require("root/lib/procurement")
 
+var FLAGS = {
+	"bidding-period": "Bidding period is between 0–32 or 50–57 days."
+}
+
 module.exports = function(attrs) {
 	var procurement = attrs.procurement
 	var buyer = attrs.buyer
 	var contracts = attrs.contracts
+	var flags = Procurement.flag(procurement)
 
 	return <Page page="procurement" req={attrs.req} title={procurement.title}>
 		<header id="header">
@@ -84,6 +91,11 @@ module.exports = function(attrs) {
 					<td>{procurement.dispute_count}</td>
 				</tr>
 			</table>
+
+			{flags.length > 0 ? <div class="flags">
+				<Heading>Red Flags</Heading>
+				<ol>{flags.map((flag) => <li>{FLAGS[flag]}</li>)}</ol>
+			</div> : null}
 		</Section>
 
 		{contracts.length > 0 ?<Section>
@@ -91,9 +103,18 @@ module.exports = function(attrs) {
 
 			<table class="opener-table contracts">
 				<thead>
-					<th>Nr</th>
+					<th>
+						Nr<br />
+						<small>Date</small>
+					</th>
+
 					<th>Title</th>
-					<th>Organization</th>
+
+					<th>
+						Organization<br />
+						<small>Possibly Related Donations</small>
+					</th>
+
 					<th>Estimated Cost</th>
 					<th>Cost</th>
 				</thead>
@@ -105,12 +126,25 @@ module.exports = function(attrs) {
 					})
 
 					return <tr id={"contract-" + contract.id}>
-						<td>{contract.nr}</td>
+						<td>
+							{contract.nr}<br />
+							<small><DateElement at={procurement.published_at} /></small>
+						</td>
+
 						<td>{contract.title}</td>
 
-						<td>{contract.seller_id ? <a href={sellerPath} class="link-button">
-							{contract.seller_name}
-						</a> : "Non-disclosed"}</td>
+						<td>{contract.seller_id ? <Fragment>
+							<a href={sellerPath} class="link-button">
+								{contract.seller_name}
+							</a><br />
+
+							<ul>{contract.donations.map((donation) => <li><small>
+								{donation.donator_name} {_.formatMoney(
+									donation.currency,
+									donation.amount
+								)} to {donation.party_name} on {donation.date}.
+							</small></li>)}</ul>
+						</Fragment> : "Non-disclosed"}</td>
 
 						<td>{contract.estimated_cost != null ? _.formatMoney(
 							contract.estimated_cost_currency,
@@ -131,6 +165,11 @@ module.exports = function(attrs) {
 function TimeElement(attrs) {
 	var at = attrs.at
 	return <time datetime={at.toJSON()}>{formatIsoDateTime(at)}</time>
+}
+
+function DateElement(attrs) {
+	var at = attrs.at
+	return <time datetime={at.toJSON()}>{_.formatIsoDate(at)}</time>
 }
 
 function formatIsoDateTime(time) {

@@ -85,22 +85,66 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 	var contracts = yield contractsDb.search(sql`
 		SELECT
 			contract.*,
-			org.name AS seller_name
+			org.name AS seller_name,
+
+			json_group_array(json_object(
+				'date', donation.date,
+				'donator_name', person.name,
+				'amount', donation.amount,
+				'currency', donation.currency,
+				'party_name', party.name
+			)) AS donations
 
 		FROM procurement_contracts AS contract
+
+		JOIN procurements AS procurement
+		ON procurement.country = contract.procurement_country
+		AND procurement.id = contract.procurement_id
 
 		LEFT JOIN organizations AS org
 		ON org.country = contract.seller_country
 		AND org.id = contract.seller_id
 
+		LEFT JOIN organization_people AS role
+		ON role.organization_country = org.country
+		AND role.organization_id = org.id
+
+		LEFT JOIN people AS person
+		ON person.country = role.person_country
+		AND person.id = role.person_id
+
+		LEFT JOIN political_party_donations AS donation
+		ON donation.donator_normalized_name = person.normalized_name
+		AND donation.donator_birthdate = person.birthdate
+
+		AND datetime(donation.date, 'localtime') >=
+			datetime(procurement.deadline_at, 'localtime', '-1 year')
+
+		AND datetime(donation.date, 'localtime') <
+			datetime(procurement.deadline_at, 'localtime')
+
+		AND datetime(donation.date, 'localtime') >=
+			datetime(role.started_at, 'localtime')
+
+		AND datetime(donation.date, 'localtime') <
+			datetime(role.ended_at, 'localtime')
+
+		LEFT JOIN political_parties AS party ON party.id = donation.party_id
+
 		WHERE contract.procurement_country = ${procurement.country}
 		AND contract.procurement_id = ${procurement.id}
+		
+		GROUP BY contract.id
 	`)
 
+	contracts.forEach(function(contract) {
+		contract.donations = JSON.parse(contract.donations).filter((d) => d.date)
+	})
+
 	res.render("procurements/read_page.jsx", {
-		procurement: procurement,
-		buyer: buyer,
-		contracts: contracts
+		procurement,
+		buyer,
+		contracts
 	})
 }))
 
