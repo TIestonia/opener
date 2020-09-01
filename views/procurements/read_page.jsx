@@ -14,6 +14,26 @@ var FLAGS = {
 	"bidding-period": "Bidding period is between 0–32 or 50–57 days."
 }
 
+var ESTONIAN_PROCEDURE_TYPES = {
+	A: "Avatud hankemenetlus",
+	DP: "Dünaamilise hankesüsteemi piiratud hankemenetlus",
+	G: "Konkurentsipõhine läbirääkimistega hankemenetlus",
+	IK: "Avatud ideekonkurss",
+	KE: "Kontsessiooni erimenetlus",
+	LA: "Erandi alusel",
+	LM: "Lihthange",
+	LT: "Lihtsustatud korras teenuste tellimine",
+	M: "Minikonkurss raamlepingu alusel",
+	MS: "Toetuse saaja ost",
+	PK: "Piiratud osalejate arvuga ideekonkurss",
+	PN: "Eelteade tähtaegade lühendamiseks",
+	P: "Piiratud hankemenetlus",
+	SE: "Sotsiaal- ja eriteenuste erimenetlus",
+	T: "Väljakuulutamiseta läbirääkimistega hankemenetlus",
+	VD: "Võistlev dialoog",
+	VO: "Väikehange"
+}
+
 module.exports = function(attrs) {
 	var procurement = attrs.procurement
 	var buyer = attrs.buyer
@@ -36,7 +56,10 @@ module.exports = function(attrs) {
 			<table class="properties">
 				<tr>
 					<th>Process Type</th>
-					<td>{PROCEDURE_TYPES[procurement.procedure_type]}</td>
+					<td>{
+						PROCEDURE_TYPES[procurement.procedure_type] ||
+						ESTONIAN_PROCEDURE_TYPES[procurement.procedure_type]
+					}</td>
 				</tr>
 
 				<tr>
