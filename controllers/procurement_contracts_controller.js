@@ -79,11 +79,11 @@ exports.router.get("/after-donation", next(function*(_req, res) {
 
 		JOIN political_parties AS party ON party.id = donation.party_id
 
-		WHERE datetime(contract.created_at, 'localtime') >
-			datetime(donation.date, 'localtime')
+		WHERE datetime(donation.date, 'localtime') >=
+			datetime(procurement.deadline_at, 'localtime', '-1 year')
 
-		AND datetime(donation.date, 'localtime') >=
-			datetime(contract.created_at, 'localtime', '-1 year')
+		AND datetime(donation.date, 'localtime') <
+			datetime(procurement.deadline_at, 'localtime')
 
 		AND datetime(donation.date, 'localtime') >=
 			datetime(role.started_at, 'localtime')
