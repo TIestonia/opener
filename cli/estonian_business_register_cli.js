@@ -2,6 +2,7 @@ var _ = require("root/lib/underscore")
 var Config = require("root/config")
 var Neodoc = require("neodoc")
 var DateFns = require("date-fns")
+var RegisterXml = require("root/lib/estonian_business_register_xml")
 var api = require("root/lib/estonian_business_register_api")
 var sqlite = require("root").sqlite
 var updateSql = require("heaven-sqlite").update
@@ -43,7 +44,7 @@ module.exports = function*(argv) {
 
 	yield organizationsDb.execute(sql`
 		${updateSql("organizations", organizationsDb.serialize({
-			name: info.nimi
+			name: info.nimi.$
 		}))}
 
 		WHERE country = 'EE' AND id = ${orgId}
@@ -61,21 +62,21 @@ module.exports = function*(argv) {
 	).filter((e) => (
 		// Only physical people (tyyp == F) and board-level. That is, no auditors
 		// (D) nor stockholders (S). non-stockholders (roll != S).
-		e.isiku_tyyp == "F" && e.isiku_roll != "D" && e.isiku_roll != "S"
+		e.isiku_tyyp.$ == "F" && e.isiku_roll.$ != "D" && e.isiku_roll.$ != "S"
 	))
 
 	for (var i = 0; i < entries.length; ++i) {
 		var entry = entries[i]
-		var id = entry.isikukood_registrikood
-		var name = entry.eesnimi + " " + entry.nimi_arinimi
+		var id = entry.isikukood_registrikood && entry.isikukood_registrikood.$
+		var name = entry.eesnimi.$ + " " + entry.nimi_arinimi.$
 
-		if (isMissing(id)) {
+		if (id == null) {
 			// AS G4S Eesti has a chairman of the supervisory board that only
 			// includes a foreign id, though with no country for context.
 			console.warn(
 				"Missing personal id for %s (entry %s).",
 				name,
-				entry.kirje_id
+				entry.kirje_id.$
 			)
 
 			continue
@@ -99,21 +100,21 @@ module.exports = function*(argv) {
 			organization_id: org.id,
 			person_country: person.country,
 			person_id: person.id,
-			started_at: parseDateFromRegisterTimestamp(entry.algus_kpv),
+			started_at: parseRegisterDate(entry.algus_kpv.$),
 
 			// Unknown yet whether the end date is inclusive or exclusive.
 			// Assuming the former as people often use dates with inclusive ranges.
-			ended_at: typeof entry.lopp_kpv == "number"
-				? DateFns.addDays(parseDateFromRegisterTimestamp(entry.lopp_kpv), 1)
+			ended_at: entry.lopp_kpv
+				? DateFns.addDays(parseRegisterDate(entry.lopp_kpv.$), 1)
 				: null,
 
-			role: entry.isiku_roll
+			role: entry.isiku_roll.$
 		})
 	}
 
 	yield organizationsDb.execute(sql`
 		${updateSql("organizations", organizationsDb.serialize({
-			business_register_data: info,
+			business_register_data: RegisterXml.serialize({item: info}),
 			business_register_synced_at: new Date
 		}))} WHERE country = 'EE' AND id = ${orgId}
 	`)
@@ -143,7 +144,7 @@ function readOrganizationFromRegister(code) {
 						<reg:ariregistri_kood>${code}</reg:ariregistri_kood>
 
 						<reg:ariregister_valjundi_formaat>
-							json
+							xml
 						</reg:ariregister_valjundi_formaat>
 
 						<reg:yandmed>false</reg:yandmed>
@@ -156,18 +157,18 @@ function readOrganizationFromRegister(code) {
 				</reg:detailandmed_v3>
 			</Body>
 		</Envelope>`
-	}).then((res) => res.body.keha.ettevotjad.item[0])
+	}).then(function(res) {
+		// The register responds with an empty <ettevotjad> tag but no <item> if
+		// not found.
+		var soap = RegisterXml.parse(res.body).soap$Envelope.soap$Body
+		var orgs = soap.detailandmed_v3Response.keha.ettevotjad.item || null
+		return orgs || (orgs instanceof Array ? orgs[0].item : orgs.item)
+	})
 }
 
-function parseDateFromRegisterTimestamp(time) {
-	// For some reason the dates in XML are converted to Unix timestamps that are
-	// offset by one hour from midnight UTC.
-	var utc = new Date(time * 1000)
-	return new Date(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate())
-}
-
-function isMissing(value) {
-	// The Estonian Business Register for some reason includes non-existent or
-	// non-appicable XML properties for tags as empty objects.
-	return typeof value == "object" && _.isEmpty(value)
+function parseRegisterDate(date) {
+	// For some reason dates in the register XML have a "Z" suffix. That doesn't
+	// make sense as time zoned dates seldom make sense and especially not in UTC
+	// for datas pertaining to Estonian organizations.
+	return _.parseIsoDate(date.replace(/Z$/, ""))
 }
