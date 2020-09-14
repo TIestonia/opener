@@ -15,9 +15,9 @@ exports.parse = function(attrs) {
 exports.serialize = function(attrs) {
 	var obj = _.clone(attrs)
 
-	if ("date" in obj) obj.date = _.formatIsoDate(obj.date)
+	if (obj.date) obj.date = _.formatIsoDate(obj.date)
 
-	if ("donator_birthdate" in obj)
+	if (obj.donator_birthdate)
 		obj.donator_birthdate = _.formatIsoDate(obj.donator_birthdate)
 
 	return obj

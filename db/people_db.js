@@ -13,6 +13,6 @@ exports.parse = function(attrs) {
 
 exports.serialize = function(attrs) {
 	var obj = _.clone(attrs)
-	if ("birthdate" in obj) obj.birthdate = _.formatIsoDate(obj.birthdate)
+	if (obj.birthdate) obj.birthdate = _.formatIsoDate(obj.birthdate)
 	return obj
 }
