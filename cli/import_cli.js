@@ -6,7 +6,8 @@ var organizationsDb = require("root/db/organizations_db")
 var procurementsDb = require("root/db/procurements_db")
 var contractsDb = require("root/db/procurement_contracts_db")
 var partiesDb = require("root/db/political_parties_db")
-var donationsDb = require("root/db/political_party_donations_db")
+var partyMembersDb = require("root/db/political_party_members_db")
+var partyDonationsDb = require("root/db/political_party_donations_db")
 var co = require("co")
 var sql = require("sqlate")
 var sqlite = require("root").sqlite
@@ -19,6 +20,7 @@ Usage: cli import (-h | --help)
        cli import [options] procurements (<path>|-)
        cli import [options] procurements-csv (<path>|-)
        cli import [options] procurement-contracts-csv (<path>|-)
+       cli import [options] political-party-members (<path>|-)
        cli import [options] political-party-donations <name> (<path>|-)
 
 Options:
@@ -39,6 +41,8 @@ module.exports = function*(argv) {
 		yield importProcurementsCsv(path)
 	else if (args["procurement-contracts-csv"])
 		yield importProcurementContracts(path)
+	else if (args["political-party-members"])
+		yield importPoliticalPartyMembers(path)
 	else if (args["political-party-donations"])
 		yield importPoliticalPartyDonations(args["<name>"], path)
 	else
@@ -187,6 +191,43 @@ function* importProcurementContracts(path) {
 	yield sqlite(sql`COMMIT`)
 }
 
+function* importPoliticalPartyMembers(path) {
+	yield sqlite(sql`BEGIN`)
+
+	var parties = {}
+
+	yield Cli.stream(Cli.readCsv(path, {delimiter: ";"}), co.wrap(function*(obj) {
+		var partyName = obj.Erakond
+		var party = parties[partyName]
+		var name = obj.Eesnimi + " " + obj.Perenimi
+
+		if (party == null) {
+			party = yield partiesDb.read(sql`
+				SELECT * FROM political_parties
+				WHERE country = 'EE' AND name = ${partyName}
+			`)
+
+			if (party == null) party = yield partiesDb.create({
+				country: "EE",
+				name: partyName
+			})
+
+			parties[partyName] = party
+		}
+
+		// The CSV never seems to include any former members.
+		yield partyMembersDb.create({
+			party_id: party.id,
+			name: name,
+			normalized_name: _.normalizeName(name),
+			birthdate: _.parseEstonianDate(obj["Sünniaeg"]),
+			joined_on: _.parseEstonianDate(obj["Liikmeks astumise aeg"])
+		})
+	}))
+
+	yield sqlite(sql`COMMIT`)
+}
+
 function* importPoliticalPartyDonations(partyName, path) {
 	yield sqlite(sql`BEGIN`)
 
@@ -203,7 +244,7 @@ function* importPoliticalPartyDonations(partyName, path) {
 	yield Cli.stream(Cli.readCsv(path, {delimiter: ";"}), co.wrap(function*(obj) {
 		if (obj.Tululiik != "Rahaline annetus") return
 
-		yield donationsDb.create({
+		yield partyDonationsDb.create({
 			party_id: party.id,
 			date: _.parseEstonianDate(obj["Laekumise kuupäev"]),
 			donator_name: obj["Tasuja nimi"],
