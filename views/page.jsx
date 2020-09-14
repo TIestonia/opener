@@ -1,11 +1,19 @@
 /** @jsx Jsx */
+var _ = require("root/lib/underscore")
 var Jsx = require("j6pack")
 var LIVERELOAD_PORT = process.env.LIVERELOAD_PORT || 35729
 var ENV = process.env.ENV
+var COUNTRY_NAMES = require("root/lib/country_names")
 exports = module.exports = Page
 exports.Header = Header
 exports.Section = Section
 exports.Heading = Heading
+exports.Subheading = Subheading
+exports.Table = Table
+exports.DateElement = DateElement
+exports.TimeElement = TimeElement
+exports.MoneyElement = MoneyElement
+exports.FlagElement = FlagElement
 
 function Page(attrs, children) {
 	var req = attrs.req
@@ -24,34 +32,21 @@ function Page(attrs, children) {
 
 		<body id={page + "-page"}>
 			<nav id="nav">
-				<div class="centered">
+				<Centered>
 					<a href="/" class="home">Opener</a>
 
 					<menu class="pages">
 						<ul>
-							<li><a
-								href="/procurements"
-								class={prefixed("/procurements/", path)}
-							>
-								Procurements
-							</a></li>
+							<li class={prefixed("/procurements/", path)}>
+								<a href="/procurements">Procurements</a>
+							</li>
 
-							<li><a
-								href="/procurement-contracts"
-								class={prefixed("/procurement-contracts/", path)}
-							>
-								Contracts
-							</a></li>
-
-							<li><a
-								href="/organizations"
-								class={prefixed("/organizations/", path)}
-							>
-								Organizations
-							</a></li>
+							<li class={prefixed("/organizations/", path)}>
+								<a href="/organizations">Organizations</a>
+							</li>
 						</ul>
 					</menu>
-				</div>
+				</Centered>
 			</nav>
 
 			<main id="main">{children}</main>
@@ -59,18 +54,59 @@ function Page(attrs, children) {
 	</html>
 }
 
+function Centered(_attrs, children) {
+	return <div class="centered">{children}</div>
+}
+
 function Header(_attrs, children) {
-	return <header id="header">
-		<h1 class="centered">{children}</h1>
+	return <header id="header" class="centered">
+		{children}
 	</header>
 }
 
-function Section(_attrs, children) {
-	return <section class="centered">{children}</section>
+function Section(attrs, children) {
+	return <section id={attrs && attrs.id} class="centered">
+		{children}
+	</section>
 }
 
 function Heading(_attrs, children) {
 	return <h2 class="page-heading">{children}</h2>
+}
+
+function Subheading(_attrs, children) {
+	return <h3 class="page-subheading">{children}</h3>
+}
+
+function Table(attrs, children) {
+	return <div class="opener-table-wrapper">
+		<table {...attrs}>{children}</table>
+	</div>
+}
+
+function TimeElement(attrs) {
+	var at = attrs.at
+	return <time datetime={at.toJSON()}>{_.formatDateTime("us", at)}</time>
+}
+
+function DateElement(attrs) {
+	var at = attrs.at
+	return <time datetime={at.toJSON()}>{_.formatDate("us", at)}</time>
+}
+
+function MoneyElement(attrs) {
+	var amount = attrs.amount
+	var currency = attrs.currency
+
+	var text = _.formatMoney(currency, amount)
+
+	var major, cents = ""
+	if (/\.\d+$/.test(text)) [major, cents] = text.split(".")
+	else major = text
+
+	return <span class="opener-money" title={_.formatPrice(currency, amount)}>
+		{major}{cents ? <sup>.{cents}</sup> : null}
+	</span>
 }
 
 function LiveReload(attrs) {
@@ -82,6 +118,17 @@ function LiveReload(attrs) {
 		async
 		defer
 	/>
+}
+
+var COUNTRY_FLAGS = {
+	EE: "/assets/flag-ee.png"
+}
+
+function FlagElement(attrs) {
+	var country = attrs.country
+	var src = COUNTRY_FLAGS[country]
+	var name = COUNTRY_NAMES[country]
+	return src ? <img class="opener-flag" src={src} alt={name} /> : null
 }
 
 function prefixed(prefix, path) {

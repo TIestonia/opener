@@ -26,10 +26,7 @@ app.get("/", (_req, res) => res.redirect("/procurements"))
 _.each({
 	"/organizations": require("../controllers/organizations_controller").router,
 	"/procurements": require("../controllers/procurements_controller").router,
-	"/people": require("../controllers/people_controller").router,
-
-	"/procurement-contracts":
-		require("../controllers/procurement_contracts_controller").router
+	"/people": require("../controllers/people_controller").router
 }, (router, path) => app.use(path, router))
 
 app.use(function(_req, _res, next) { next(new HttpError(404)) })

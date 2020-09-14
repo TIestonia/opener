@@ -1,0 +1,13 @@
+<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/">
+  <Header/>
+  <Body xmlns:reg="http://arireg.x-road.eu/producer/">
+    <reg:klassifikaatorid_v1>
+      <reg:keha>
+				<reg:ariregister_kasutajanimi>$USER</reg:ariregister_kasutajanimi>
+				<reg:ariregister_parool>$PASSWORD</reg:ariregister_parool>
+				<reg:keel>eng</reg:keel>
+				<reg:klassifikaator>ISIKROLLID</reg:klassifikaator>
+      </reg:keha>
+    </reg:klassifikaatorid_v1>
+  </Body>
+</Envelope>

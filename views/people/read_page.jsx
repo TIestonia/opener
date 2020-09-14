@@ -1,76 +1,107 @@
 /** @jsx Jsx */
 var _ = require("root/lib/underscore")
 var Jsx = require("j6pack")
+var {Fragment} = Jsx
 var Page = require("../page")
 var Paths = require("root/lib/paths")
-var DateFns = require("date-fns")
 var {Header} = Page
 var {Heading} = Page
 var {Section} = Page
+var {Table} = Page
+var {FlagElement} = Page
+var {DateElement} = Page
+var {MoneyElement} = Page
+var {RolesTable} = require("../organizations/read_page")
 var ROLES = require("root/lib/procurement").ORGANIZATION_ROLES
 
 module.exports = function(attrs) {
-	var person = attrs.person
-	var donations = attrs.donations
-	var roles = attrs.roles
+	var {person} = attrs
+	var {donations} = attrs
+	var {organizations} = attrs
 
 	return <Page page="person" req={attrs.req} title={person.name}>
-		<Header>{person.name}</Header>
+		<Header>
+			<h1>{person.name}</h1>
 
-		{roles.length > 0 ? <Section>
-			<Heading>Roles</Heading>
-			<table class="opener-table people">
+			<p class="header-subtitle birthdate">
+				<FlagElement country={person.country} />
+
+				Born <DateElement at={person.birthdate} />
+			</p>
+
+			{person.political_party_name ? <p class="political-party">
+				Member of {person.political_party_name} since
+				{" "}
+				<DateElement at={person.political_party_joined_on} />.
+			</p> : null}
+		</Header>
+
+		{organizations.length > 0 ? <Section>
+			<Heading>Organizations</Heading>
+			<Table id="organizations">
 				<thead>
-					<th>Organization</th>
-					<th>Role</th>
-					<th>From</th>
-					<th>Until</th>
+					<th><span class="sort">Name</span></th>
+					<th class="role-column"><span class="sort">Role</span></th>
 				</thead>
 
-				<tbody>{roles.map(function(role) {
-					var organizationPath = Paths.organizationPath({
-						country: role.organization_country,
-						id: role.organization_id
-					})
+				<tbody>{organizations.map(function(org) {
+					var organizationPath = Paths.organizationPath(org)
+					var roles = _.sortBy(org.roles, "started_at")
 
-					return <tr>
-						<td><a href={organizationPath} class="link-button">
-							{role.organization_name}
-						</a></td>
+					var lastRole = (
+						_.findLast(roles, (role) => !role.ended_at) ||
+						_.last(roles)
+					)
 
-						<td>{ROLES[role.role]}</td>
-						<td>{_.formatIsoDate(role.started_at)}</td>
+					return <Fragment>
+						<tr class="organization">
+							<td>
+								<h3 class="name">
+									<a href={organizationPath}>{org.name}</a>
+								</h3>
+							</td>
 
-						<td>{role.ended_at
-							? _.formatIsoDate(DateFns.addDays(role.ended_at, -1))
-							: null
-						}</td>
-					</tr>
+							<td class="role-column role">
+								{lastRole.ended_at
+									? "Was " + ROLES[lastRole.role].toLowerCase() + "."
+									: ROLES[lastRole.role]
+								}
+							</td>
+						</tr>
+
+						<tr class="organization-roles">
+							<td colspan="2">
+								<RolesTable roles={roles} />
+							</td>
+						</tr>
+					</Fragment>
 				})}</tbody>
-			</table>
+			</Table>
 		</Section> : null}
 
 		{donations.length > 0 ? <Section>
 			<Heading>Donations</Heading>
-			<table class="opener-table donations">
+			<Table id="donations">
 				<thead>
-					<th>Date</th>
-					<th>Political Party</th>
-					<th>Amount</th>
+					<th class="date-column"><span class="sort">Date</span></th>
+					<th><span class="sort">Political Party</span></th>
+					<th class="amount-column"><span class="sort">Amount</span></th>
 				</thead>
 
 				<tbody>{donations.map(function(donation) {
-					return <tr>
-						<td>{donation.date}</td>
+					return <tr class="donation">
+						<td class="date-column"><DateElement at={donation.date} /></td>
 						<td>{donation.party_name}</td>
 
-						<td>{_.formatMoney(
-							donation.currency,
-							donation.amount
-						)}</td>
+						<td class="amount-column">
+							<MoneyElement
+								currency={donation.currency}
+								amount={donation.amount}
+							/>
+						</td>
 					</tr>
 				})}</tbody>
-			</table>
+			</Table>
 		</Section> : null}
 	</Page>
 }

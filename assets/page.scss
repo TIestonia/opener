@@ -1,23 +1,44 @@
 @import "reset";
+@import "fonts";
 $page-width: 100rem;
 $page-padding: 6rem;
-$body-font: Helvetica, Arial, sans-serif;
-$link-blue: #0078ff;
-$blue: #0000F0;
-$dark-grey: #323334;
-$light-grey: #f0f1f2;
-$purple: #331e42;
+$body-font: Lato, Helvetica, Arial, sans-serif;
+$ti-blue: #3695d8;
+$subtitle-grey: #878787;
+$heading-size: 2.4rem;
+$subheading-size: 2rem;
+$list-item-size: 2rem;
+$list-item-subtitle: #303030;
+$table-header-background: #f9f9f9;
+$table-separator: #eee;
+
+html,
+body {
+	min-height: 100%;
+}
 
 body {
-	background-color: white;
-	color: $dark-grey;
+	background:
+		linear-gradient(to bottom, #fbfbfb 0, #f0f0f0 700px)
+		#f0f0f0;
+
 	font-family: $body-font;
-	font-size: 1.4rem;
+	font-size: 1.5rem;
 	color: black;
+}
+
+main {
+	padding-bottom: 4rem;
 }
 
 strong {
 	font-weight: bold;
+}
+
+section.centered {
+	& + section {
+		margin-top: 4rem;
+	}
 }
 
 .centered {
@@ -26,187 +47,703 @@ strong {
 	padding: 0 $page-padding;
 }
 
-section.centered {
-	padding-top: 4rem;
-	padding-bottom: 4rem;
+.page-heading {
+	font-size: $heading-size;
+	font-weight: 600;
+	line-height: 1.5;
+
+	& + * { margin-top: 1rem; }
 }
 
-.page-heading {
-	font-size: 3.6rem;
-	color: $purple;
+.page-subheading {
+	font-size: $subheading-size;
+	font-weight: 600;
 	line-height: 1.5;
+
+	& + * { margin-top: 1rem; }
 }
+
+.blue-button {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	border: 0;
+	text-shadow: inherit;
+
+	display: inline-block;
+	height: 3rem;
+	padding: 0 2rem;
+	border-radius: 0.3rem;
+	font-weight: medium;
+	font-size: 1.4rem;
+	font-weight: semibold;
+
+	// Explicit center for when the buttons are displayed as blocks.
+	text-align: center;
+
+	&:not(button) { line-height: 3rem; }
+}
+
+.blue-button { background: $ti-blue; color: white; }
 
 .link-button {
-	color: $blue;
+	color: $ti-blue;
 	text-decoration: underline;
+	cursor: pointer;
+	outline-offset: 0.2rem;
+
+	&:focus { outline: 1px dashed $ti-blue; }
+}
+
+.hover-link-button {
+	outline-offset: 0.2rem;
+
+	&:hover { color: $ti-blue; }
+	&:focus { outline: 1px dashed $ti-blue; }
+}
+
+.opener-table-wrapper {
+	// Negative margins and width on a table don't work as they do on <div> as
+	// the table doesn't expand by default.
+	margin-left: -2rem;
+	margin-right: -2rem;
 }
 
 .opener-table {
-	th, td {
-		line-height: 1.5;
-		padding: 0 1rem;
+	width: 100%;
+	color: $subtitle-grey;
+	font-size: 1.5rem;
+	line-height: 1.5;
+
+	& > thead {
+		background: $table-header-background;
+		position: sticky;
+		top: 0;
+
+		th {
+			padding: 1rem 1rem;
+			font-size: 1.4rem;
+			color: black;
+
+			.sort {
+				& + .sort { margin-left: 2rem; }
+			}
+
+			a.sort {
+				background-image: url("/assets/sort.png");
+				background-position: right center;
+				background-repeat: no-repeat;
+				background-size: contain;
+				padding-right: 1.5rem;
+
+				@extend .hover-link-button;
+			}
+		}
+
+		th:first-child { padding-left: 2rem; }
+		th:last-child { padding-right: 2rem; }
 	}
 
-	th { font-weight: bold; }
-
-	small {
-		font-size: 0.9em;
+	& > tbody {
+		background: white;
 	}
 }
 
+.opener-table-row {
+	td { padding: 2rem 1rem; }
+
+	th:first-child,
+	td:first-child { padding-left: 2rem; }
+	th:last-child,
+	td:last-child { padding-right: 2rem; }
+}
+
+.opener-table-subrow {
+	background: $table-header-background;
+	font-size: 1.4rem;
+	line-height: 1.7;
+	color: black;
+
+	& > td {
+		padding: 1rem 2rem;
+	}
+}
+
+.opener-table-subtable {
+	width: 100%;
+
+	th { font-weight: bold; }
+	th,
+	td { padding: 0 1rem; }
+	th:first-child,
+	td:first-child { padding-left: 0; }
+	th:last-child,
+	td:last-child { padding-right: 0; }
+}
+
+.opener-table-row-title {
+	font-size: $list-item-size;
+	color: black;
+	line-height: 1.25;
+	font-weight: 700;
+
+	a { @extend .hover-link-button; }
+}
+
+.opener-table-row-subtitle {
+	color: $list-item-subtitle;
+
+	a { @extend .hover-link-button; }
+}
+
+.opener-money {
+	sup {
+		//vertical-align: top;
+		font-size: 0.7em;
+		color: $subtitle-grey;
+	}
+}
+
+.opener-flag {
+	display: inline-block;
+	box-shadow: 0 1px rgba(black, .2);
+}
+
 #nav {
-	padding: 2rem 0;
-	line-height: 3rem;
-	color: white;
-	background: $purple;
+	line-height: 2.4rem;
+	color: black;
+	background: white;
+	border-top: 10px solid $ti-blue;
+	padding-top: 0.5rem;
 
 	.home {
 		font-weight: bold;
-		font-size: 1.8rem;
+		font-size: 2rem;
 		display: inline-block;
-		vertical-align: middle;
+		color: $ti-blue;
+		margin-right: 1rem;
 
-		&:focus { outline: 1px dashed rgba(white, 0.8); }
+		-moz-outline-radius: 3px;
+		outline-offset: 0.3rem;
+		&:focus { outline: 1px dashed $ti-blue; }
 	}
 
-	menu {
+	.pages {
 		display: inline-block;
 		margin-left: 2rem;
 
 		li { display: inline-block; }
 	}
-
-	menu a {
-		margin-left: 0.5rem;
-		border-radius: 0.3rem;
-		border: 1px solid transparent;
-		font-size: 1.3rem;
-		display: inline-block;
-		padding: 0 1rem;
+	
+	.pages li {
+		padding: 1rem 0;
+		border-bottom: 3px solid transparent;
 
 		&.selected {
-			color: $purple;
-			background-color: white;
-			font-weight: bold;
+			border-bottom-color: $ti-blue;
 		}
 
-		&:focus { border: 1px dashed rgba(white, 0.8); }
-		&:hover { border-color: white; }
+		& + li {
+			margin-left: 2rem;
+		}
+	}
+
+	.pages a {
+		font-size: 1.6rem;
+		display: inline-block;
+		font-weight: medium;
+		outline-offset: 0.3rem;
+
+		&:focus { outline: 1px dashed $ti-blue; }
+		&:hover { color: $ti-blue; }
 	}
 }
 
 #header {
-	padding: 4rem 0 4rem;
-	line-height: 1;
-	background: $purple;
-	color: white;
-	font-size: 4.8rem;
+	margin-top: 5rem;
+	margin-bottom: 3rem;
+	color: #5A5A5A;
+	line-height: 1.5;
+
+	h1 {
+		font-weight: 600;
+		line-height: 1.1;
+		font-size: 3.6rem;
+		color: black;
+	}
+
+	.header-subtitle {
+		font-size: $heading-size;
+		font-weight: normal;
+
+		a { @extend .hover-link-button; }
+	}
 }
 
 #procurements-page main {
-	#filter {
-		padding-bottom: 2rem;
-		margin-bottom: 2rem;
-		border-bottom: 1px solid $light-grey;
+	#header {
+		margin-bottom: 1rem;
+	}
 
-		button[type=submit] {
-			margin-top: 0.5rem;
+	.intro-text {
+		line-height: 1.7;
+
+		.example-filter-link {
+			border-radius: 5rem;
+			font-size: 1.4rem;
+			padding: 0 1rem;
+			background-color: $ti-blue;
+			color: white;
+			display: inline-block;
+		}
+	}
+
+	#procurements-section {
+		.filter-description {
+			line-height: 1.5;
+		}
+	}
+
+	#filters {
+		#filters-toggle:checked + label,
+		#filters-toggle:not(:checked) ~ form { display: none; }
+
+		form {
+			margin-top: 1rem;
+			background: white;
+			padding: 2rem;
+			margin-left: -2rem;
+			margin-right: -2rem;
 		}
 
-		.attributes {
-			input,
+		.filter {
+			display: inline-block;
+			margin-right: 2rem;
+			margin-bottom: 1rem;
+
+			label {
+				font-weight: 600;
+				display: block;
+				margin-bottom: 0.3rem;
+			}
+
 			select {
+				height: 3rem;
+			}
+
+			input {
+				height: 3rem;
+				padding: 0 1rem;
+
+				-webkit-appearance: none;
+				-moz-appearance: none;
+				appearance: none;
+
+				border: 1px solid #ccc;
+				border-radius: 0.5rem;
+			}
+
+			select + input {
 				margin-left: 0.5rem;
 			}
 
-			li + li {
-				margin-top: 0.5rem;
+			input[type=number] {
+				-moz-appearance: textfield;
+				max-width: 5rem;
+				text-align: right;
+			}
+
+			select[name=procedure-type] {
+				max-width: 20rem;
 			}
 		}
 
-		.predefined-filters {
-			margin-top: 2rem;
+		button[type=submit] {
+			@extend .blue-button;
 		}
 	}
+}
 
-	#procurement-groups {
-		h2 {
-			text-transform: capitalize;
-		}
+.opener-procurements {
+	@extend .opener-table;
+
+	margin-top: 2rem;
+
+	.bidding-duration-column,
+	.bidders-column,
+	.cost-column {
+		text-align: right;
 	}
 
-	.procurements {
-		h3 {
-			font-size: 2rem;
-			color: $purple;
-			line-height: 1.5;
+	.procurement {
+		@extend .opener-table-row;
+		
+		.title {
+			@extend .opener-table-row-title;
+		}
 
-			.buyer-name {
-				color: #666;
+		.buyer-name {
+			@extend .opener-table-row-subtitle;
+
+			.opener-flag {
+				margin-right: 1rem;
+				width: 2rem;
+				vertical-align: middle;
 			}
 		}
 
-		.procurement + .procurement {
-			margin-top: 2rem;
+		strong {
+			font-weight: bold;
+			color: black;
+			white-space: nowrap;
+			font-size: $list-item-size;
+		}
+
+		& + .procurement td {
+			border-top: 1px solid #eee;
+		}
+	}
+
+	.procurement-contracts,
+	.procurement-donations {
+		@extend .opener-table-subrow;
+
+		table { @extend .opener-table-subtable; }
+	}
+
+	.procurement-contracts {
+		.contracts-toggle:checked ~ .summary,
+		.contracts-toggle:checked + .contracts-toggle-button,
+		.contracts-toggle:not(:checked) ~ table { display: none; }
+
+		.contracts-toggle-button {
+			float: right;
+			padding-right: 2rem;
+			background-image: url("/assets/expand.png");
+			background-size: 1rem;
+			background-repeat: no-repeat;
+			background-position: right center;
+		}
+
+		.summary {
+			margin-right: 20rem;
+
+			ul, li { display: inline; }
+		}
+
+		table {
+			.cost-column {
+				text-align: right;
+				font-weight: 600;
+			}
+		}
+	}
+
+	.procurement-donations {
+		p {
+			font-weight: bold;
+		}
+
+		.amount-column {
+			text-align: right;
+			font-weight: 600;
 		}
 	}
 }
 
 #procurement-page main {
 	#header {
-		.buyer-name {
+		.opener-flag { margin-right: 1.5rem; width: 2.4rem; }
+		.dates { font-size: 1.5rem; color: $subtitle-grey; }
+	}
+
+	#summary {
+		padding: 2rem 2rem 0;
+		margin-left: -2rem;
+		margin-right: -2rem;
+		background: white;
+		line-height: 1.4;
+
+		&:after {
+			content: "";
 			display: block;
-			margin-top: 1rem;
-			font-size: 2.4rem;
+			clear: both;
+		}
+
+		.attribute {
+			display: inline-block;
+			vertical-align: top;
+			width: 16.66%;
+			margin-bottom: 2rem;
+
+			h3 {
+				color: $subtitle-grey;
+				font-weight: 500;
+				font-size: 1.3rem;
+				text-transform: uppercase;
+			}
+
+			strong {
+				font-size: $heading-size;
+				font-weight: bold;
+			}
+		}
+
+		#integrity-indicators {
+			display: block;
+			float: right;
+			width: 50%;
+			font-size: 1.5rem;
+
+			li {
+				& + li {
+					margin-top: 0.5rem;
+				}
+			}
+
+			i {
+				border-radius: 50%;
+				display: inline-block;
+				width: 1.4rem;
+				height: 1.4rem;
+				vertical-align: middle;
+				margin-right: 1rem;
+
+				&.ok { background-color: #a5d35a; }
+				&.not-ok { background-color: #e21a58; }
+			}
 		}
 	}
 
-	.properties {
-		th, td {
-			line-height: 1.5;
-			padding: 0 1rem;
-		}
+	#details {
+		line-height: 1.5;
 
-		th { font-weight: bold; }
+		table {
+			background: white;
+			margin-left: -2rem;
+			margin-right: -2rem;
+
+			td { padding: 0 1rem; }
+
+			tr:first-child td { padding-top: 1rem; }
+			tr:last-child td { padding-bottom: 1rem; }
+
+			th:first-child,
+			td:first-child { padding-left: 2rem; }
+			th:last-child,
+			td:last-child { padding-right: 2rem; }
+
+			th { font-weight: bold; }
+		}
 	}
 
-	.flags {
-		margin-top: 2rem;
+	#contracts {
+		@extend .opener-table;
+
+		min-width: 100%;
+
+		.contract {
+			@extend .opener-table-row;
+
+			.seller-name {
+				@extend .opener-table-row-title;
+
+				.opener-flag { margin-right: 1rem; width: 2rem; }
+			}
+
+			.title {
+				@extend .opener-table-row-subtitle;
+			}
+
+			.cost-column {
+				text-align: right;
+			}
+
+			strong {
+				font-weight: bold;
+				color: black;
+				white-space: nowrap;
+				font-size: $list-item-size;
+			}
+
+			& + .contract td { border-top: 1px solid $table-separator; }
+		}
+
+		.contract-donations {
+			@extend .opener-table-subrow;
+
+			p { font-weight: bold; }
+			table { @extend .opener-table-subtable; }
+			.amount-column { text-align: right; font-weight: 600; }
+		}
 	}
 }
 
 #organizations-page main {
-	.organizations {
-		h2 {
-			font-size: 2rem;
-			color: $purple;
-			line-height: 1.5;
+	#organizations {
+		@extend .opener-table;
 
-			.buyer-name {
-				color: #666;
+		.organization {
+			@extend .opener-table-row;
+
+			.name {
+				@extend .opener-table-row-title;
 			}
-		}
 
-		.organization + .organization {
-			margin-top: 2rem;
+			strong {
+				font-weight: bold;
+				color: black;
+				white-space: nowrap;
+				font-size: $list-item-size;
+			}
+
+			& + .organization td {
+				border-top: 1px solid #eee;
+			}
 		}
 	}
 }
 
 #organization-page main {
-	.properties {
-		th, td {
-			line-height: 1.5;
-			padding: 0 1rem;
+	#header {
+		.opener-flag {
+			margin-right: 1.5rem;
+			width: 2.4rem;
+			vertical-align: middle;
+		}
+	}
+
+	#summary {
+		padding: 2rem 2rem 0;
+		margin-left: -2rem;
+		margin-right: -2rem;
+		background: white;
+		line-height: 1.4;
+
+		.attribute {
+			display: inline-block;
+			vertical-align: top;
+			width: 33.33%;
+			margin-bottom: 2rem;
+
+			h3 {
+				color: $subtitle-grey;
+				font-weight: 500;
+				font-size: 1.3rem;
+				text-transform: uppercase;
+			}
+
+			strong {
+				font-size: $heading-size;
+				font-weight: bold;
+				color: black;
+			}
+
+			color: $subtitle-grey;
+		}
+	}
+
+	#people-section {
+		.page-subheading {
+			margin-top: 4rem;
+		}
+	}
+
+	.people {
+		@extend .opener-table;
+
+		& > thead .role-column,
+		.person .role-column {
+			text-align: right;
 		}
 
-		th { font-weight: bold; }
+		.person {
+			@extend .opener-table-row;
+
+			.name {
+				@extend .opener-table-row-title;
+			}
+
+			.role {
+				font-size: $list-item-size;
+				color: $list-item-subtitle;
+			}
+
+			&.ended {
+				.name,
+				.role { font-size: 1.5rem; }
+			}
+		}
+
+		.person-roles {
+			@extend .opener-table-subrow;
+
+			table { @extend .opener-table-subtable; }
+
+			.from-column { width: 10rem; }
+			.until-column { width: 10rem; text-align: right; }
+		}
+
+		&.inactive-people {
+			.opener-table-row {
+				td { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+			}
+		}
 	}
 }
 
-#procurement-contracts-page main {
-	.queries {
-		margin-bottom: 2rem;
+#person-page {
+	#header {
+		.opener-flag { margin-right: 1.5rem; width: 2.4rem; }
+		.political-party { color: $subtitle-grey; }
+	}
+
+	#organizations {
+		@extend .opener-table;
+
+		& > thead .role-column,
+		.organization .role-column {
+			text-align: right;
+		}
+
+		.organization {
+			@extend .opener-table-row;
+
+			.name {
+				@extend .opener-table-row-title;
+			}
+
+			.role {
+				font-size: $list-item-size;
+				color: $list-item-subtitle;
+			}
+		}
+
+		.organization-roles {
+			@extend .opener-table-subrow;
+
+			table { @extend .opener-table-subtable; }
+
+			.from-column { width: 13rem; } // Aligns nicely with the donations date.
+			.until-column { width: 13rem; text-align: right; }
+		}
+	}
+
+	#donations {
+		@extend .opener-table;
+		
+		.date-column { width: 15rem; }
+		.amount-column { text-align: right; }
+
+		.donation {
+			@extend .opener-table-row;
+
+			color: black;
+
+			td { padding-top: 0; padding-bottom: 0; }
+			&:first-child td { padding-top: 1rem; }
+			&:last-child td { padding-bottom: 1rem; }
+			& + tr td { padding-top: 0.3rem; }
+		}
 	}
 }

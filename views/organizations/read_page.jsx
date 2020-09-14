@@ -1,146 +1,209 @@
 /** @jsx Jsx */
 var _ = require("root/lib/underscore")
 var Jsx = require("j6pack")
+var {Fragment} = Jsx
 var Page = require("../page")
-var DateFns = require("date-fns")
 var Paths = require("root/lib/paths")
 var {Header} = Page
 var {Heading} = Page
+var {Subheading} = Page
 var {Section} = Page
+var {Table} = Page
+var {FlagElement} = Page
+var {DateElement} = Page
+var {MoneyElement} = Page
+var {ProcurementList} = require("../procurements/index_page")
 var ROLES = require("root/lib/procurement").ORGANIZATION_ROLES
 var HTTP_URL = /^https?:\/\//i
+exports = module.exports = ReadPage
+exports.RolesTable = RolesTable
 
-module.exports = function(attrs) {
+function ReadPage(attrs) {
 	var organization = attrs.organization
 	var people = attrs.people
 	var procurements = attrs.procurements
-	var contracts = attrs.contracts
+	var procurementsWon = attrs.procurementsWon
+
+	var procurementsCost = _.sum(procurements.map((procurement) => (
+		procurement.cost || procurement.estimated_cost || 0
+	)))
+
+	var contractsCount = _.sum(procurementsWon.map((p) => p.contracts.length))
+
+	var contractsCost = _.sum(procurementsWon.map((p) => (
+		_.sum(p.contracts.map((contract) => (
+			contract.cost || contract.estimated_cost || 0
+		)))
+	)))
+
+	var [activePeople, inactivePeople] = _.partition(people, (person) => (
+		person.roles.some((role) => !role.ended_at
+	)))
 
 	return <Page page="organization" req={attrs.req} title={organization.title}>
-		<Header>{organization.name}</Header>
+		<Header>
+			<h1>{organization.name}</h1>
+
+			<p class="header-subtitle registry-code">
+				<FlagElement country={organization.country} />
+
+				{organization.id}
+			</p>
+		</Header>
 
 		<Section>
-			<table class="properties">
-				<tr>
-					<th>Registry Code</th>
-					<td>{organization.id}</td>
-				</tr>
+			<div id="summary">
+				{procurements.length > 0 ? <div class="attribute">
+					<h3>Procurements</h3>
 
-				{organization.url ? <tr>
-					<th>Website</th>
-					<td><UntrustedLink href={organization.url} /></td>
-				</tr> : null}
-			</table>
+					<strong>
+						<MoneyElement currency="EUR" amount={procurementsCost} />
+					</strong>
+
+					<br />
+					{procurements.length}
+					{_.plural(procurements.length, " procurement", " procurements")}
+
+					<br />
+					<a href="#procurements-section" class="link-button">
+						View Procurements
+					</a>
+				</div> : null}
+
+				{contractsCount > 0 ? <div class="attribute">
+					<h3>Contracts</h3>
+
+					<strong>
+						<MoneyElement currency="EUR" amount={contractsCost} />
+					</strong>
+
+					<br />
+					{contractsCount}
+					{_.plural(contractsCount, " contract", " contracts")}
+
+					<br />
+					<a href="#contracts-section" class="link-button">View Contracts</a>
+				</div> : null}
+
+				{activePeople.length > 0 ? <div class="attribute">
+					<h3>Board-Level People</h3>
+					<strong>{activePeople.length}</strong>
+					<br />
+					<a href="#people-section" class="link-button">View People</a>
+				</div> : null}
+			</div>
+
+			<p>
+				{organization.url ? <UntrustedLink href={organization.url} /> : null}
+			</p>
 		</Section>
 
-		{procurements.length > 0 ? <Section>
+		{procurements.length > 0 ? <Section id="procurements-section">
 			<Heading>Procurements</Heading>
-			<table class="opener-table procurements">
-				<thead>
-					<th>Nr</th>
-					<th>Title</th>
-					<th>Estimated Cost</th>
-					<th>Cost</th>
-				</thead>
 
-				<tbody>{procurements.map(function(procurement) {
-					return <tr>
-						<td>{procurement.id}</td>
-
-						<td><a
-							href={Paths.procurementPath(procurement)}
-							class="link-button"
-						>
-							{procurement.title}
-						</a></td>
-
-						<td>{procurement.estimated_cost != null ? _.formatMoney(
-							procurement.estimated_cost_currency,
-							procurement.estimated_cost
-						) : ""}</td>
-
-						<td>{procurement.cost != null ? _.formatMoney(
-							procurement.cost_currency,
-							procurement.cost
-						) : ""}</td>
-					</tr>
-				})}</tbody>
-			</table>
+			<ProcurementList
+				procurements={procurements}
+				showBuyer={false}
+			/>
 		</Section> : null}
 
-		{contracts.length > 0 ? <Section>
+		{procurementsWon.length > 0 ? <Section id="contracts-section">
 			<Heading>Contracts</Heading>
-			<table class="opener-table contracts">
-				<thead>
-					<th>Date</th>
-					<th>Procurement</th>
-					<th>Title</th>
-					<th>Estimated Cost</th>
-					<th>Cost</th>
-				</thead>
 
-				<tbody>{contracts.map(function(contract) {
-					var procurementPath = Paths.procurementPath({
-						country: contract.procurement_country,
-						id: contract.procurement_id
-					})
-
-					return <tr>
-						<td>{_.formatIsoDate(contract.created_at)}</td>
-
-						<td><a href={procurementPath} class="link-button">
-							{contract.procurement_title}
-						</a></td>
-
-						<td>{contract.title}</td>
-
-						<td>{contract.estimated_cost != null ? _.formatMoney(
-							contract.estimated_cost_currency,
-							contract.estimated_cost
-						) : ""}</td>
-
-						<td>{contract.cost != null ? _.formatMoney(
-							contract.cost_currency,
-							contract.cost
-						) : ""}</td>
-					</tr>
-				})}</tbody>
-			</table>
+			<ProcurementList
+				procurements={procurementsWon}
+				showAllContracts
+			/>
 		</Section> : null}
 
-		{people.length > 0 ? <Section>
-			<Heading>People</Heading>
-			<table class="opener-table people">
-				<thead>
-					<th>Name</th>
-					<th>Role</th>
-					<th>From</th>
-					<th>Until</th>
-				</thead>
+		{people.length > 0 ? <Section id="people-section">
+			<Heading>Board-Level People</Heading>
+			<PeopleTable people={activePeople} />
 
-				<tbody>{people.map(function(person) {
-					var personPath = Paths.personPath({
-						country: person.person_country,
-						id: person.person_id
-					})
-
-					return <tr>
-						<td><a href={personPath} class="link-button">
-							{person.person_name}
-						</a></td>
-
-						<td>{ROLES[person.role]}</td>
-						<td>{_.formatIsoDate(person.started_at)}</td>
-
-						<td>{person.ended_at
-							? _.formatIsoDate(DateFns.addDays(person.ended_at, -1))
-							: null
-						}</td>
-					</tr>
-				})}</tbody>
-			</table>
+			{inactivePeople.length > 0 ? <Fragment>
+				<Subheading>Previous Board-Level People</Subheading>
+				<PeopleTable people={inactivePeople} class="inactive-people" />
+			</Fragment> : null}
 		</Section> : null}
 	</Page>
+}
+
+function PeopleTable(attrs) {
+	var {people} = attrs
+
+	return <Table class={"people " + (attrs.class || "")}>
+		<thead>
+			<th><span class="sort">Name</span></th>
+			<th class="role-column"><span class="sort">Role</span></th>
+		</thead>
+
+		<tbody>{people.map(function(person) {
+			var personPath = Paths.personPath(person)
+			var roles = _.sortBy(person.roles, "started_at")
+
+			var lastRole = (
+				_.findLast(roles, (role) => !role.ended_at) ||
+				_.last(roles)
+			)
+
+			return <Fragment>
+				<tr class={"person" + (lastRole.ended_at ? " ended" : "")}>
+					<td>
+						<h4 class="name">
+							<a href={personPath}>{person.name}</a>
+						</h4>
+
+						{person.political_party_name ? <p class="political-party">
+							Member of {person.political_party_name} since
+							{" "}
+							<DateElement at={person.political_party_joined_on} />.
+						</p> : null}
+					</td>
+
+					<td class="role-column role">
+						{lastRole.ended_at
+							? "Was " + ROLES[lastRole.role].toLowerCase() + "."
+							: ROLES[lastRole.role]
+						}
+					</td>
+				</tr>
+
+				<tr class="person-roles">
+					<td colspan="2">
+						<RolesTable roles={roles} />
+					</td>
+				</tr>
+			</Fragment>
+		})}</tbody>
+	</Table>
+}
+
+function RolesTable(attrs) {
+	var {roles} = attrs
+
+	return <table>
+		<thead>
+			<th class="from-column"><span class="sort">From</span></th>
+			<th class="role-column"><span class="sort">Role</span></th>
+			<th class="until-column"><span class="sort">Until</span></th>
+		</thead>
+
+		<tbody>{roles.map((role) => <tr>
+			<td class="from-column">
+				<DateElement at={role.started_at} />
+			</td>
+
+			<td
+				class={"role-column" + (role.ended_at ? " ended" : "")}
+			>
+				{ROLES[role.role]}
+			</td>
+
+			<td class="until-column">{
+				role.ended_at ? <DateElement at={role.ended_at} /> : null
+			}</td>
+		</tr>)}</tbody>
+	</table>
 }
 
 function UntrustedLink(attrs, children) {

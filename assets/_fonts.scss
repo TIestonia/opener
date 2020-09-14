@@ -1,0 +1,55 @@
+@font-face {
+	font-family: "Lato";
+	font-style: normal;
+	font-weight: normal;
+	text-rendering: optimizeLegibility;
+
+	src: url("/assets/LatoLatin-Regular.eot");
+	src:
+		url("/assets/LatoLatin-Regular.eot?#iefix") format("embedded-opentype"),
+		url("/assets/LatoLatin-Regular.woff2") format("woff2"),
+		url("/assets/LatoLatin-Regular.woff") format("woff"),
+		url("/assets/LatoLatin-Regular.ttf") format("truetype");
+}
+
+@font-face {
+	font-family: "Lato";
+	font-style: normal;
+	font-weight: 500;
+	text-rendering: optimizeLegibility;
+
+	src: url("/assets/LatoLatin-Medium.eot");
+	src:
+		url("/assets/LatoLatin-Medium.eot?#iefix") format("embedded-opentype"),
+		url("/assets/LatoLatin-Medium.woff2") format("woff2"),
+		url("/assets/LatoLatin-Medium.woff") format("woff"),
+		url("/assets/LatoLatin-Medium.ttf") format("truetype");
+}
+
+@font-face {
+	font-family: "Lato";
+	font-style: normal;
+	font-weight: 600;
+	text-rendering: optimizeLegibility;
+
+	src: url("/assets/LatoLatin-Semibold.eot");
+	src:
+		url("/assets/LatoLatin-Semibold.eot?#iefix") format("embedded-opentype"),
+		url("/assets/LatoLatin-Semibold.woff2") format("woff2"),
+		url("/assets/LatoLatin-Semibold.woff") format("woff"),
+		url("/assets/LatoLatin-Semibold.ttf") format("truetype");
+}
+
+@font-face {
+	font-family: "Lato";
+	font-style: normal;
+	font-weight: bold;
+	text-rendering: optimizeLegibility;
+
+	src: url("/assets/LatoLatin-Bold.eot");
+	src:
+		url("/assets/LatoLatin-Bold.eot?#iefix") format("embedded-opentype"),
+		url("/assets/LatoLatin-Bold.woff2") format("woff2"),
+		url("/assets/LatoLatin-Bold.woff") format("woff"),
+		url("/assets/LatoLatin-Bold.ttf") format("truetype");
+}

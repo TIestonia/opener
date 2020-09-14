@@ -1,28 +1,75 @@
+var _ = require("root/lib/underscore")
 var Router = require("express").Router
 var HttpError = require("standard-http-error")
 var procurementsDb = require("root/db/procurements_db")
 var organizationsDb = require("root/db/organizations_db")
 var contractsDb = require("root/db/procurement_contracts_db")
+var donationsDb = require("root/db/political_party_donations_db")
 var sql = require("sqlate")
 var next = require("co-next")
 var ID_PATH = "/:country([A-Z][A-Z])::id"
 exports.router = Router({mergeParams: true})
 
+var COMPARATORS = {
+	"<": sql`<`,
+	"<=": sql`<=`,
+	"=": sql`=`,
+	">=": sql`>=`,
+	">": sql`>`
+}
+
+var FILTERS = [
+	"country",
+	"bidder-count",
+	"contract-count",
+	"bidding-duration",
+	"procedure-type",
+	"political-party-donations"
+]
+
 exports.router.get("/", next(function*(req, res) {
 	var filters = parseFilters(req.query)
+	var country = filters.country
 	var bidderCount = filters["bidder-count"]
 	var contractCount = filters["contract-count"]
 	var biddingDuration = filters["bidding-duration"]
-	var procedureType = filters["process-type"]
+	var procedureType = filters["procedure-type"]
+	var politicalPartyDonations = filters["political-party-donations"]
 
 	var procurements = yield procurementsDb.search(sql`
 		SELECT
 			procurement.*,
 			buyer.name AS buyer_name,
-			COUNT(contract.id) AS contract_count,
 
-			julianday(procurement.deadline_at, 'localtime') -
-			julianday(procurement.published_at, 'localtime') AS bidding_duration
+			COUNT(DISTINCT contract.id) AS contract_count,
+
+			json_group_array(DISTINCT json_object(
+				'id', contract.id,
+				'title', contract.title,
+				'cost', contract.cost,
+				'cost_currency', contract.cost_currency,
+				'seller_country', contract.seller_country,
+				'seller_id', contract.seller_id,
+				'seller_name', seller.name
+			)) AS contracts
+
+			${biddingDuration ? sql`,
+				julianday(procurement.deadline_at, 'localtime') -
+				julianday(procurement.published_at, 'localtime') AS bidding_duration
+			` : sql``}
+
+			${politicalPartyDonations ? sql`,
+				json_group_array(json_object(
+					'date', donation.date,
+					'amount', donation.amount,
+					'currency', donation.currency,
+					'party_name', party.name,
+					'donator_country', person.country,
+					'donator_id', person.id,
+					'donator_name', person.name,
+					'donator_role', role.role
+				)) AS donations
+			` : sql``}
 
 		FROM procurements AS procurement
 
@@ -31,34 +78,85 @@ exports.router.get("/", next(function*(req, res) {
 		AND buyer.id = procurement.buyer_id
 
 		LEFT JOIN procurement_contracts AS contract
-		ON procurement_id = procurement.id
+		ON contract.procurement_id = procurement.id
+
+		LEFT JOIN organizations AS seller
+		ON seller.country = contract.seller_country
+		AND seller.id = contract.seller_id
+
+		${politicalPartyDonations ? sql`
+			LEFT JOIN organization_people AS role
+			ON role.organization_country = seller.country
+			AND role.organization_id = seller.id
+
+			LEFT JOIN people AS person
+			ON person.country = role.person_country
+			AND person.id = role.person_id
+
+			LEFT JOIN political_party_donations AS donation
+			ON donation.donator_normalized_name = person.normalized_name
+			AND donation.donator_birthdate = person.birthdate
+
+			LEFT JOIN political_parties AS party ON party.id = donation.party_id
+		` : sql``}
 
 		WHERE 1 = 1
 
-		${procedureType != null ? sql`
-			AND procedure_type = ${procedureType[1]}
+		${country ? sql`
+			AND procurement.country = ${country[1]}
 		`: sql``}
 
-		${bidderCount != null ? sql`
-			AND bidder_count ${bidderCount[0]} ${Number(bidderCount[1])}`
+		${procedureType ? sql`
+			AND procurement.procedure_type = ${procedureType[1]}
+		`: sql``}
+
+		${bidderCount ? sql`
+			AND procurement.bidder_count ${COMPARATORS[bidderCount[0]]}
+			${Number(bidderCount[1])}`
 		: sql``}
 
-		${biddingDuration != null ? sql`
-			AND bidding_duration ${biddingDuration[0]}
+		${biddingDuration ? sql`
+			AND bidding_duration ${COMPARATORS[biddingDuration[0]]}
 			${Number(biddingDuration[1].replace(/d$/, ""))}`
 		: sql``}
 
-		GROUP BY procurement.id
+		${politicalPartyDonations ? sql`
+			AND datetime(procurement.deadline_at, 'localtime', ${
+				"-" + Number(politicalPartyDonations[1]) + " months"
+			}) ${COMPARATORS[politicalPartyDonations[0]]}
+				datetime(donation.date, 'localtime')
 
-		${contractCount != null ? sql`
-			HAVING contract_count ${contractCount[0]} ${Number(contractCount[1])}
+			AND datetime(donation.date, 'localtime') <
+				datetime(procurement.deadline_at, 'localtime')
+
+			AND datetime(donation.date, 'localtime') >=
+				datetime(role.started_at, 'localtime')
+
+			AND datetime(donation.date, 'localtime') <
+				datetime(role.ended_at, 'localtime')
+		` : sql``}
+
+		GROUP BY procurement.country, procurement.id
+
+		${contractCount ? sql`
+			HAVING contract_count ${COMPARATORS[contractCount[0]]}
+			${Number(contractCount[1])}
 		` : sql``}
 	`)
 
+	procurements.forEach(function(procurement) {
+		var contracts = JSON.parse(procurement.contracts).filter((c) => c.id)
+		procurement.contracts = contracts.map(contractsDb.parse)
+	})
+
+	if (politicalPartyDonations) procurements.forEach(function(procurement) {
+		var donations = JSON.parse(procurement.donations).filter((d) => d.date)
+		procurement.donations = donations.map(donationsDb.parse)
+	})
+
 	res.render("procurements/index_page.jsx", {
 		procurements,
-		procedureTypeFilter: procedureType && procedureType[1],
-		bidderCountFilter: bidderCount && bidderCount[1]
+		filters
 	})
 }))
 
@@ -89,10 +187,13 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 
 			json_group_array(json_object(
 				'date', donation.date,
-				'donator_name', person.name,
 				'amount', donation.amount,
 				'currency', donation.currency,
-				'party_name', party.name
+				'party_name', party.name,
+				'donator_country', person.country,
+				'donator_id', person.id,
+				'donator_name', person.name,
+				'donator_role', role.role
 			)) AS donations
 
 		FROM procurement_contracts AS contract
@@ -138,7 +239,8 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 	`)
 
 	contracts.forEach(function(contract) {
-		contract.donations = JSON.parse(contract.donations).filter((d) => d.date)
+		var donations = JSON.parse(contract.donations).filter((d) => d.date)
+		contract.donations = donations.map(donationsDb.parse)
 	})
 
 	res.render("procurements/read_page.jsx", {
@@ -154,16 +256,18 @@ function parseFilters(query) {
 	for (var filter in query) {
 		if (filter.includes("<")) {
 			[name, value] = filter.split("<")
-			if (query[filter]) filters[name] = [sql`<=`, query[filter]]
-			else if (value) filters[name] = [sql`<`, value]
+			if (filter.endsWith("<<")) filters[name] = ["<", query[filter]]
+			else if (query[filter]) filters[name] = ["<=", query[filter]]
+			else if (value) filters[name] = ["<", value]
 		}
 		else if (filter.includes(">")) {
 			[name, value] = filter.split(">")
-			if (query[filter]) filters[name] = [sql`>=`, query[filter]]
-			else if (value) filters[name] = [sql`>`, value]
+			if (filter.endsWith(">>")) filters[name] = [">", query[filter]]
+			else if (query[filter]) filters[name] = [">=", query[filter]]
+			else if (value) filters[name] = [">", value]
 		}
-		else if (query[filter]) filters[filter] = [sql`=`, query[filter]]
+		else if (query[filter]) filters[filter] = ["=", query[filter]]
 	}
 
-	return filters
+	return _.filterValues(filters, (_v, name) => FILTERS.includes(name))
 }

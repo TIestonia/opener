@@ -19,6 +19,13 @@ Usage: cli estonian-business-register (-h | --help)
 Options:
     -h, --help   Display this help and exit.
 `
+var IRRELEVALT_ROLES = [
+	"D", // Auditor
+	"S", // Stockholder
+	"O", // Shareholder
+	"M", // Auditor of valuation of non-monetary contribution
+	"PANKR" // Trustee in bankruptcy
+]
 
 module.exports = function*(argv) {
   var args = Neodoc.run(USAGE_TEXT, {argv: argv || ["import"]})
@@ -60,9 +67,8 @@ module.exports = function*(argv) {
 		info.isikuandmed.kaardile_kantud_isikud.item,
 		info.isikuandmed.kaardivalised_isikud.item
 	).filter((e) => (
-		// Only physical people (tyyp == F) and board-level. That is, no auditors
-		// (D) nor stockholders (S). non-stockholders (roll != S).
-		e.isiku_tyyp.$ == "F" && e.isiku_roll.$ != "D" && e.isiku_roll.$ != "S"
+		// Only physical people (tyyp == F) and board-level.
+		e.isiku_tyyp.$ == "F" && !IRRELEVALT_ROLES.includes(e.isiku_roll)
 	))
 
 	for (var i = 0; i < entries.length; ++i) {

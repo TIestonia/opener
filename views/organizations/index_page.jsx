@@ -1,9 +1,13 @@
 /** @jsx Jsx */
+var _ = require("root/lib/underscore")
 var Jsx = require("j6pack")
+var {Fragment} = Jsx
 var Page = require("../page")
 var Paths = require("root/lib/paths")
 var {Header} = Page
 var {Section} = Page
+var {Table} = Page
+var {MoneyElement} = Page
 
 module.exports = function(attrs) {
 	var organizations = attrs.organizations
@@ -13,28 +17,56 @@ module.exports = function(attrs) {
 		req={attrs.req}
 		title="Organizations"
 	>
-		<Header>Organizations</Header>
+		<Header>
+			<h1>Organizations</h1>
+		</Header>
 
 		<Section>
-			<ol class="organizations">{organizations.map(function(organization) {
-				return <li class="organization">
-					<h2>
-						<a href={Paths.organizationPath(organization)}>
-							{organization.name}
-						</a>
-					</h2>
+			<Table id="organizations">
+				<thead>
+					<th><span class="sort">Name</span></th>
+					<th><span class="sort">Procurements</span></th>
+					<th><span class="sort">Contracts</span></th>
+				</thead>
 
-					<ul>
-						{organization.procurement_count > 0 ? <li>
-							{organization.procurement_count} procurements
-						</li> : null}
+				<tbody>{organizations.map(function(org) {
+					return <tr class="organization">
+						<td>
+							<h3 class="name">
+								<a href={Paths.organizationPath(org)}>
+									{org.name}
+								</a>
+							</h3>
+						</td>
 
-						{organization.contract_count > 0 ? <li>
-							{organization.contract_count} contracts
-						</li> : null}
-					</ul>
-				</li>
-			})}</ol>
+						<td class="procurements-column">
+							{org.procurement_count > 0 ? <Fragment>
+								<strong>
+									<MoneyElement currency="EUR" amount={org.procurements_cost} />
+								</strong>
+
+								<br />
+								{org.procurement_count}
+								{" "}
+								{_.plural(org.procurement_count, "procurement", "procurements")}
+							</Fragment> : null}
+						</td>
+
+						<td class="contracts-column">
+							{org.contract_count > 0 ? <Fragment>
+								<strong>
+									<MoneyElement currency="EUR" amount={org.contracts_cost} />
+								</strong>
+
+								<br />
+								{org.contract_count}
+								{" "}
+								{_.plural(org.contract_count, "contract", "contracts")}
+							</Fragment> : null}
+						</td>
+					</tr>
+				})}</tbody>
+			</Table>
 		</Section>
 	</Page>
 }

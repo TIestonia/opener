@@ -7,6 +7,8 @@ exports.idColumn = null
 
 exports.parse = function(attrs) {
 	return _.defaults({
+		date: attrs.date && _.parseIsoDate(attrs.date),
+
 		donator_birthdate: attrs.donator_birthdate &&
 			_.parseIsoDate(attrs.donator_birthdate)
 	}, attrs)

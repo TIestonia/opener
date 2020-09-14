@@ -1,6 +1,8 @@
+var _ = require("root/lib/underscore")
 var Router = require("express").Router
 var HttpError = require("standard-http-error")
 var organizationsDb = require("root/db/organizations_db")
+var peopleDb = require("root/db/people_db")
 var orgPeopleDb = require("root/db/organization_people_db")
 var procurementsDb = require("root/db/procurements_db")
 var contractsDb = require("root/db/procurement_contracts_db")
@@ -14,8 +16,14 @@ exports.router.get("/", next(function*(_req, res) {
 	var organizations = yield organizationsDb.search(sql`
 		SELECT
 			org.*,
+
 			COUNT(procurement.id) AS procurement_count,
-			COUNT(contract.id) AS contract_count
+			SUM(COALESCE(procurement.cost, procurement.estimated_cost, 0))
+			AS procurements_cost,
+
+			COUNT(contract.id) AS contract_count,
+			SUM(COALESCE(contract.cost, contract.estimated_cost, 0))
+			AS contracts_cost
 
 		FROM organizations AS org
 
@@ -27,7 +35,8 @@ exports.router.get("/", next(function*(_req, res) {
 		ON contract.seller_country = org.country
 		AND contract.seller_id = org.id
 
-		GROUP BY org.id
+		GROUP BY org.country, org.id
+		ORDER BY org.name
 	`)
 
 	res.render("organizations/index_page.jsx", {organizations: organizations})
@@ -48,14 +57,43 @@ exports.router.use(ID_PATH, next(function*(req, _res, next) {
 exports.router.get(ID_PATH, next(function*(req, res) {
 	var organization = req.organization
 
-	var people = yield orgPeopleDb.search(sql`
-		SELECT role.*, person.name AS person_name
-		FROM organization_people AS role
-		JOIN people AS person
-		ON person.country = role.person_country AND person.id = role.person_id
-		WHERE organization_country = ${organization.country}
-		AND organization_id = ${organization.id}
+	var people = yield peopleDb.search(sql`
+		SELECT
+			person.*,
+			party.name AS political_party_name,
+			member.joined_on AS political_party_joined_on,
+
+			json_group_array(DISTINCT json_object(
+				'role', role.role,
+				'started_at', role.started_at,
+				'ended_at', role.ended_at
+			)) AS roles
+
+		FROM people AS person
+
+		JOIN organization_people AS role
+		ON role.organization_country = ${organization.country}
+		AND role.organization_id = ${organization.id}
+		AND role.person_country = person.country
+		AND role.person_id = person.id
+
+		LEFT JOIN political_party_members AS member
+		ON member.normalized_name = person.normalized_name
+		AND member.birthdate = person.birthdate
+
+		LEFT JOIN political_parties AS party ON party.id = member.party_id
+
+		GROUP BY person.country, person.id
 	`)
+
+	people.forEach(function(person) {
+		person.political_party_joined_on = (
+			person.political_party_joined_on &&
+			_.parseIsoDate(person.political_party_joined_on)
+		)
+
+		person.roles = JSON.parse(person.roles).map(orgPeopleDb.parse)
+	})
 
 	var procurements = yield procurementsDb.search(sql`
 		SELECT * FROM procurements
@@ -63,21 +101,48 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 		AND buyer_id = ${organization.id}
 	`)
 
-	var contracts = yield contractsDb.search(sql`
-		SELECT contract.*, procurement.title AS procurement_title
-		FROM procurement_contracts AS contract
+	var procurementsWon = yield procurementsDb.search(sql`
+		SELECT
+			procurement.*,
+			buyer.name AS buyer_name,
 
-		JOIN procurements AS procurement
-		ON procurement.id = contract.procurement_id
+			json_group_array(DISTINCT json_object(
+				'id', contract.id,
+				'title', contract.title,
+				'cost', contract.cost,
+				'cost_currency', contract.cost_currency,
+				'seller_country', contract.seller_country,
+				'seller_id', contract.seller_id,
+				'seller_name', seller.name
+			)) AS contracts
 
-		WHERE contract.seller_country = ${organization.country}
+		FROM procurements AS procurement
+
+		JOIN organizations AS buyer
+		ON buyer.country = procurement.buyer_country
+		AND buyer.id = procurement.buyer_id
+
+		JOIN procurement_contracts AS contract
+		ON contract.procurement_id = procurement.id
+		AND contract.seller_country = ${organization.country}
 		AND contract.seller_id = ${organization.id}
+
+		LEFT JOIN organizations AS seller
+		ON seller.country = contract.seller_country
+		AND seller.id = contract.seller_id
+
+		GROUP BY procurement.country, procurement.id
 	`)
+
+	procurementsWon.forEach(function(procurement) {
+		var contracts = JSON.parse(procurement.contracts).filter((c) => c.id)
+		procurement.contracts = contracts.map(contractsDb.parse)
+	})
 
 	res.render("organizations/read_page.jsx", {
 		organization: organization,
 		people: people,
 		procurements: procurements,
-		contracts: contracts
+		procurementsWon: procurementsWon
 	})
 }))

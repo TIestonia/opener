@@ -9,6 +9,7 @@ APP_HOST = dot.ee
 APP_PATH = $(error "Please set APP_PATH")
 LIVERELOAD_PORT = 35733
 JQ_OPTS = --tab
+RIK_URL = https://ariregxmlv6.rik.ee
 
 RSYNC_OPTS = \
 	--compress \
@@ -28,7 +29,8 @@ RSYNC_OPTS = \
 	--exclude "/node_modules/mocha/***" \
 	--exclude "/node_modules/co-mocha/***" \
 	--exclude "/node_modules/must/***" \
-	--exclude "/node_modules/sqlite3/***"
+	--exclude "/node_modules/sqlite3/***" \
+	--exclude "/tmp/***"
 
 export ENV
 export PORT
@@ -37,6 +39,10 @@ export LIVERELOAD_PORT
 ifneq ($(filter test spec autotest autospec test/%, $(MAKECMDGOALS)),)
 	ENV = test
 endif
+
+define config
+$(shell ENV=$(ENV) node -e 'console.log(require("./config").$1)')
+endef
 
 love:
 	@$(MAKE) -C assets
@@ -85,6 +91,16 @@ db/migration:
 
 deploy:
 	@rsync $(RSYNC_OPTS) . "$(APP_HOST):$(or $(APP_PATH), $(error "APP_PATH"))/"
+
+tmp:
+	mkdir -p tmp
+
+tmp/estonian_organization_roles.xml: tmp
+tmp/estonian_organization_roles.xml: scripts/estonian_classifiers_request.xml
+	@cat "$<" |\
+	sed -e "s/\$$USER/$(call config,estonianBusinessRegisterUser)/" |\
+	sed -e "s/\$$PASSWORD/$(call config,estonianBusinessRegisterPassword)/" |\
+	http post $(RIK_URL) Content-Type:application/soap+xml | xml format > "$@"
 
 production: APP_PATH = www/opener
 production: deploy
