@@ -125,16 +125,24 @@ section.centered {
 			font-size: 1.4rem;
 			color: black;
 
-			.sort {
-				& + .sort { margin-left: 2rem; }
+			.column-name {
+				& + .column-name { margin-left: 2rem; }
 			}
 
-			a.sort {
+			.sort-button {
 				background-image: url("/assets/sort.png");
 				background-position: right center;
 				background-repeat: no-repeat;
 				background-size: contain;
 				padding-right: 1.5rem;
+
+				&.asc,
+				&.desc {
+					font-weight: 600;
+				}
+
+				&.asc { background-image: url("/assets/sort-asc.png"); }
+				&.desc { background-image: url("/assets/sort-desc.png"); }
 
 				@extend .hover-link-button;
 			}

@@ -27,6 +27,15 @@ var FILTERS = [
 	"political-party-donations"
 ]
 
+var ORDER_COLUMNS = {
+	title: sql`procurement.title`,
+	"buyer-name": sql`buyer.name`,
+	"published-at": sql`procurement.published_at`,
+	"bidding-duration": sql`bidding_duration`,
+	"bidder-count": sql`procurement.bidder_count`,
+	"cost": sql`COALESCE(procurement.cost, procurement.estimated_cost, 0)`
+}
+
 exports.router.get("/", next(function*(req, res) {
 	var filters = parseFilters(req.query)
 	var country = filters.country
@@ -35,11 +44,15 @@ exports.router.get("/", next(function*(req, res) {
 	var biddingDuration = filters["bidding-duration"]
 	var procedureType = filters["procedure-type"]
 	var politicalPartyDonations = filters["political-party-donations"]
+	var order = req.query.order ? parseOrder(req.query.order) : null
 
 	var procurements = yield procurementsDb.search(sql`
 		SELECT
 			procurement.*,
 			buyer.name AS buyer_name,
+
+			julianday(procurement.deadline_at, 'localtime') -
+			julianday(procurement.published_at, 'localtime') AS bidding_duration,
 
 			COUNT(DISTINCT contract.id) AS contract_count,
 
@@ -52,11 +65,6 @@ exports.router.get("/", next(function*(req, res) {
 				'seller_id', contract.seller_id,
 				'seller_name', seller.name
 			)) AS contracts
-
-			${biddingDuration ? sql`,
-				julianday(procurement.deadline_at, 'localtime') -
-				julianday(procurement.published_at, 'localtime') AS bidding_duration
-			` : sql``}
 
 			${politicalPartyDonations ? sql`,
 				json_group_array(json_object(
@@ -142,6 +150,11 @@ exports.router.get("/", next(function*(req, res) {
 			HAVING contract_count ${COMPARATORS[contractCount[0]]}
 			${Number(contractCount[1])}
 		` : sql``}
+
+		${order ? sql`
+			ORDER BY ${ORDER_COLUMNS[order[0]]}
+			${order[1] == "asc" ? sql`ASC` : sql`DESC`}
+		`: sql``}
 	`)
 
 	procurements.forEach(function(procurement) {
@@ -156,7 +169,8 @@ exports.router.get("/", next(function*(req, res) {
 
 	res.render("procurements/index_page.jsx", {
 		procurements,
-		filters
+		filters,
+		order
 	})
 }))
 
@@ -270,4 +284,10 @@ function parseFilters(query) {
 	}
 
 	return _.filterValues(filters, (_v, name) => FILTERS.includes(name))
+}
+
+function parseOrder(query) {
+	var direction = query[0] == "-" ? "desc" : "asc"
+	var field = query.replace(/^[-+]/, "")
+	return [field, direction]
 }

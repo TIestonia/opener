@@ -40,8 +40,8 @@ module.exports = function(attrs) {
 			<Heading>Organizations</Heading>
 			<Table id="organizations">
 				<thead>
-					<th><span class="sort">Name</span></th>
-					<th class="role-column"><span class="sort">Role</span></th>
+					<th><span class="column-name">Name</span></th>
+					<th class="role-column"><span class="column-name">Role</span></th>
 				</thead>
 
 				<tbody>{organizations.map(function(org) {
@@ -83,9 +83,9 @@ module.exports = function(attrs) {
 			<Heading>Donations</Heading>
 			<Table id="donations">
 				<thead>
-					<th class="date-column"><span class="sort">Date</span></th>
-					<th><span class="sort">Political Party</span></th>
-					<th class="amount-column"><span class="sort">Amount</span></th>
+					<th class="date-column"><span class="column-name">Date</span></th>
+					<th><span class="column-name">Political Party</span></th>
+					<th class="amount-column"><span class="column-name">Amount</span></th>
 				</thead>
 
 				<tbody>{donations.map(function(donation) {

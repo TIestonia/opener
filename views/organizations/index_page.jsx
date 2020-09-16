@@ -24,9 +24,9 @@ module.exports = function(attrs) {
 		<Section>
 			<Table id="organizations">
 				<thead>
-					<th><span class="sort">Name</span></th>
-					<th><span class="sort">Procurements</span></th>
-					<th><span class="sort">Contracts</span></th>
+					<th><span class="column-name">Name</span></th>
+					<th><span class="column-name">Procurements</span></th>
+					<th><span class="column-name">Contracts</span></th>
 				</thead>
 
 				<tbody>{organizations.map(function(org) {

@@ -1,5 +1,6 @@
 /** @jsx Jsx */
 var _ = require("root/lib/underscore")
+var Qs = require("qs")
 var Jsx = require("j6pack")
 var {Fragment} = Jsx
 var Page = require("../page")
@@ -27,10 +28,20 @@ var COMPARATOR_SUFFIXES = {
 	">": ">>"
 }
 
+var ORDER_NAMES = {
+	title: "title",
+	"buyer-name": "buyer name",
+	"published-at": "publishing date",
+	"bidding-duration": "bidding duration",
+	"bidder-count": "bidder count",
+	cost: "cost"
+}
+
 function IndexPage(attrs) {
-	var req = attrs.req
-	var procurements = attrs.procurements
-	var filters = attrs.filters
+	var {req} = attrs
+	var {procurements} = attrs
+	var {filters} = attrs
+	var {order} = attrs
 	var path = req.baseUrl
 
 	return <Page
@@ -56,12 +67,15 @@ function IndexPage(attrs) {
 			</Heading>
 
 			{!_.isEmpty(filters) ?
-				<FilterDescriptionElement filters={filters} />
+				<FilterDescriptionElement filters={filters} order={order} />
 			: null}
 
-			<FiltersView req={req} filters={filters} />
+			<FiltersView req={req} filters={filters} order={order} />
 
 			<ProcurementList
+				url={path}
+				filters={filters}
+				order={order}
 				procurements={procurements}
 				sortable
 			/>
@@ -77,6 +91,10 @@ function FiltersView(attrs) {
 	var biddingDuration = filters["bidding-duration"]
 	var procedureType = filters["procedure-type"]
 	var politicalPartyDonations = filters["political-party-donations"]
+
+	var {order} = attrs
+	var orderName = order && order[0]
+	var orderDirection = order && order[1]
 
 	return <div id="filters">
 		<input id="filters-toggle" type="checkbox" hidden />
@@ -179,6 +197,12 @@ function FiltersView(attrs) {
 				</li>
 			</ul>
 
+			{order ? <input
+				type="hidden"
+				name="order"
+				value={(orderDirection == "asc" ? "" : "-") + orderName}
+			/> : null}
+
 			<button type="submit">Filter Procurements</button>
 
 			<script>{javascript`(function() {
@@ -224,33 +248,79 @@ function ComparisonSelectInput(attrs) {
 }
 
 function ProcurementList(attrs) {
-	var procurements = attrs.procurements
-	var sortable = attrs.sortable
+	var {procurements} = attrs
+	var {sortable} = attrs
+	var {showAllContracts} = attrs
+	var {filters} = attrs
+	var {order} = attrs
 	var showBuyer = attrs.showBuyer === undefined ? true : attrs.showBuyer
-	var showAllContracts = attrs.showAllContracts
-	var SortTag = sortable ? Jsx.bind(null, "a") : Jsx.bind(null, "span")
+	var baseUrl = attrs.url
+	var query = filters ? serializeFiltersQuery(filters) : {}
+	var url = baseUrl + (query && "?" + query)
+	var orderName = order && order[0]
+	var orderDirection = order && order[1]
+
+	var MaybeSortButton = sortable
+		? SortButton
+		: (_attrs, children) => <span class="column-name">{children}</span>
 
 	return <Table class="opener-procurements">
 		<thead>
 			<tr>
 				<th>
-					<SortTag class="sort">Title</SortTag>
+					<MaybeSortButton
+						url={url}
+						name="title"
+						sorted={orderName == "title" ? orderDirection : null}
+					>
+						Title
+					</MaybeSortButton>
 					{" "}
-					<SortTag class="sort">Buyer</SortTag>
+					<MaybeSortButton
+						url={url}
+						name="buyer-name"
+						sorted={orderName == "buyer-name" ? orderDirection : null}
+					>
+						Buyer
+					</MaybeSortButton>
 					{" "}
-					<SortTag class="sort">Publishing Date</SortTag>
+					<MaybeSortButton
+						url={url}
+						name="published-at"
+						sorted={orderName == "published-at" ? orderDirection : null}
+					>
+						Publishing Date
+					</MaybeSortButton>
 				</th>
 
 				<th class="bidding-duration-column">
-					<SortTag class="sort">Bidding</SortTag>
+					<MaybeSortButton
+						url={url}
+						name="bidding-duration"
+						sorted={orderName == "bidding-duration" ? orderDirection : null}
+					>
+						Bidding
+					</MaybeSortButton>
 				</th>
 
 				<th class="bidders-column">
-					<SortTag class="sort">Bidders</SortTag>
+					<MaybeSortButton
+						url={url}
+						name="bidder-count"
+						sorted={orderName == "bidder-count" ? orderDirection : null}
+					>
+						Bidders
+					</MaybeSortButton>
 				</th>
 
 				<th class="cost-column">
-					<SortTag class="sort">Cost</SortTag>
+					<MaybeSortButton
+						url={url}
+						name="cost"
+						sorted={orderName == "cost" ? orderDirection : null}
+					>
+						Cost
+					</MaybeSortButton>
 				</th>
 			</tr>
 		</thead>
@@ -444,7 +514,8 @@ var COMPARATORS = {
 }
 
 function FilterDescriptionElement(attrs) {
-	var filters = attrs.filters
+	var {filters} = attrs
+	var {order} = attrs
 	if (_.isEmpty(filters)) return null
 
 	var originCriteria
@@ -508,8 +579,32 @@ function FilterDescriptionElement(attrs) {
 		] : null}{criteria.length > 0 ? [" with ", criteria.length > 1
 			? [_.intercalate(criteria.slice(0, -1), ", "), " and ", _.last(criteria)]
 			: criteria
-		] : null}.
+		] : null}{order ? <Fragment>
+			{" "}sorted by <strong>{ORDER_NAMES[order[0]]}</strong>
+		</Fragment> : null}.
 	</p>
+}
+
+function SortButton(attrs, children) {
+	var {name} = attrs
+	var {sorted} = attrs
+	var defaultDirection = attrs.direction || "asc"
+	var direction = !sorted ? defaultDirection : sorted == "asc" ? "desc" : "asc"
+
+	var {url} = attrs
+	url += url.indexOf("?") >= 0 ? "&" : "?"
+	url += "order=" + (direction == "asc" ? "" : "-") + name
+
+	return <a href={url} class={"column-name sort-button " + (sorted || "")}>
+		{children}
+	</a>
+}
+
+function serializeFiltersQuery(filters) {
+	return Qs.stringify(_.mapValues(
+		_.mapKeys(filters, (name, filter) => name + suffixComparator(filter)),
+		_.second
+	))
 }
 
 function suffixComparator(filter) {

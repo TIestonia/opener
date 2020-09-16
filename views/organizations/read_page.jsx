@@ -133,8 +133,8 @@ function PeopleTable(attrs) {
 
 	return <Table class={"people " + (attrs.class || "")}>
 		<thead>
-			<th><span class="sort">Name</span></th>
-			<th class="role-column"><span class="sort">Role</span></th>
+			<th><span class="column-name">Name</span></th>
+			<th class="role-column"><span class="column-name">Role</span></th>
 		</thead>
 
 		<tbody>{people.map(function(person) {
@@ -183,9 +183,9 @@ function RolesTable(attrs) {
 
 	return <table>
 		<thead>
-			<th class="from-column"><span class="sort">From</span></th>
-			<th class="role-column"><span class="sort">Role</span></th>
-			<th class="until-column"><span class="sort">Until</span></th>
+			<th class="from-column"><span class="column-name">From</span></th>
+			<th class="role-column"><span class="column-name">Role</span></th>
+			<th class="until-column"><span class="column-name">Until</span></th>
 		</thead>
 
 		<tbody>{roles.map((role) => <tr>
