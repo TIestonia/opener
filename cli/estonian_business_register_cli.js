@@ -153,7 +153,7 @@ function readOrganizationFromRegister(code) {
 							xml
 						</reg:ariregister_valjundi_formaat>
 
-						<reg:yandmed>false</reg:yandmed>
+						<reg:yandmed>true</reg:yandmed>
 						<reg:iandmed>true</reg:iandmed>
 						<reg:kandmed>false</reg:kandmed>
 						<reg:dandmed>false</reg:dandmed>
