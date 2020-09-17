@@ -78,6 +78,7 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 		WHERE party.country = ${person.country}
 		AND donator_normalized_name = ${person.normalized_name}
 		AND donator_birthdate = ${_.formatIsoDate(person.birthdate)}
+		ORDER BY date ASC
 	`)
 
 	res.render("people/read_page.jsx", {
