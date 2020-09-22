@@ -40,9 +40,14 @@ var ORDER_NAMES = {
 function IndexPage(attrs) {
 	var {req} = attrs
 	var {procurements} = attrs
+	var procurementsTotalCount = procurements[0] && procurements[0].of || 0
 	var {filters} = attrs
 	var {order} = attrs
+	var {offset} = attrs
+
 	var path = req.baseUrl
+	var query = serializeFiltersQuery(filters)
+	if (order) query.order = (order[1] == "asc" ? "" : "-") + order[0]
 
 	return <Page
 		page="procurements"
@@ -61,9 +66,9 @@ function IndexPage(attrs) {
 
 		<Section id="procurements-section">
 			<Heading>
-				Found {procurements.length}
+				Found {procurementsTotalCount}
 				{" "}
-				{_.plural(procurements.length, "procurement", "procurements")}
+				{_.plural(procurementsTotalCount, "procurement", "procurements")}
 			</Heading>
 
 			{!_.isEmpty(filters) ?
@@ -73,12 +78,20 @@ function IndexPage(attrs) {
 			<FiltersView req={req} filters={filters} order={order} />
 
 			<ProcurementList
-				url={path}
-				filters={filters}
+				path={path}
+				query={query}
 				order={order}
 				procurements={procurements}
 				sortable
 			/>
+
+			{procurementsTotalCount > 0 ? <Pagination
+				total={procurementsTotalCount}
+				index={offset}
+				pageSize={1000}
+				path={path}
+				query={query}
+			/> : null}
 		</Section>
 	</Page>
 }
@@ -251,12 +264,10 @@ function ProcurementList(attrs) {
 	var {procurements} = attrs
 	var {sortable} = attrs
 	var {showAllContracts} = attrs
-	var {filters} = attrs
 	var {order} = attrs
 	var showBuyer = attrs.showBuyer === undefined ? true : attrs.showBuyer
-	var baseUrl = attrs.url
-	var query = filters ? serializeFiltersQuery(filters) : {}
-	var url = baseUrl + (query && "?" + query)
+	var {path} = attrs
+	var {query} = attrs
 	var orderName = order && order[0]
 	var orderDirection = order && order[1]
 
@@ -269,7 +280,8 @@ function ProcurementList(attrs) {
 			<tr>
 				<th>
 					<MaybeSortButton
-						url={url}
+						path={path}
+						query={query}
 						name="title"
 						sorted={orderName == "title" ? orderDirection : null}
 					>
@@ -277,7 +289,8 @@ function ProcurementList(attrs) {
 					</MaybeSortButton>
 					{" "}
 					<MaybeSortButton
-						url={url}
+						path={path}
+						query={query}
 						name="buyer-name"
 						sorted={orderName == "buyer-name" ? orderDirection : null}
 					>
@@ -285,7 +298,8 @@ function ProcurementList(attrs) {
 					</MaybeSortButton>
 					{" "}
 					<MaybeSortButton
-						url={url}
+						path={path}
+						query={query}
 						name="published-at"
 						sorted={orderName == "published-at" ? orderDirection : null}
 					>
@@ -295,7 +309,8 @@ function ProcurementList(attrs) {
 
 				<th class="bidding-duration-column">
 					<MaybeSortButton
-						url={url}
+						path={path}
+						query={query}
 						name="bidding-duration"
 						sorted={orderName == "bidding-duration" ? orderDirection : null}
 					>
@@ -305,7 +320,8 @@ function ProcurementList(attrs) {
 
 				<th class="bidders-column">
 					<MaybeSortButton
-						url={url}
+						path={path}
+						query={query}
 						name="bidder-count"
 						sorted={orderName == "bidder-count" ? orderDirection : null}
 					>
@@ -315,7 +331,8 @@ function ProcurementList(attrs) {
 
 				<th class="cost-column">
 					<MaybeSortButton
-						url={url}
+						path={path}
+						query={query}
 						name="cost"
 						sorted={orderName == "cost" ? orderDirection : null}
 					>
@@ -591,20 +608,46 @@ function SortButton(attrs, children) {
 	var defaultDirection = attrs.direction || "asc"
 	var direction = !sorted ? defaultDirection : sorted == "asc" ? "desc" : "asc"
 
-	var {url} = attrs
-	url += url.indexOf("?") >= 0 ? "&" : "?"
-	url += "order=" + (direction == "asc" ? "" : "-") + name
+	var {path} = attrs
+	var {query} = attrs
+	query = _.assign({}, query, {order: (direction == "asc" ? "" : "-") + name})
+	var url = path + "?" + Qs.stringify(query)
 
 	return <a href={url} class={"column-name sort-button " + (sorted || "")}>
 		{children}
 	</a>
 }
 
+function Pagination(attrs) {
+	var {total} = attrs
+	var {index} = attrs
+	var {pageSize} = attrs
+	var {path} = attrs
+	var {query} = attrs
+
+	var pages = Math.ceil(total / pageSize)
+	var currentPage = Math.floor(index / pageSize)
+
+	return <ol id="pagination">
+		{_.times(pages, function(page) {
+			var url = path + "?" + Qs.stringify(_.assign({}, query, {
+				offset: page * pageSize
+			}))
+
+			var isCurrent = page == currentPage
+
+			return <li class={isCurrent ? "current" : ""}>
+				<a href={isCurrent ? "#" : url}>{page + 1}</a>
+			</li>
+		})}
+	</ol>
+}
+
 function serializeFiltersQuery(filters) {
-	return Qs.stringify(_.mapValues(
+	return _.mapValues(
 		_.mapKeys(filters, (name, filter) => name + suffixComparator(filter)),
 		_.second
-	))
+	)
 }
 
 function suffixComparator(filter) {

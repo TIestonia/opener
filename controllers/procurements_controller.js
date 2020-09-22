@@ -45,6 +45,8 @@ exports.router.get("/", next(function*(req, res) {
 	var procedureType = filters["procedure-type"]
 	var politicalPartyDonations = filters["political-party-donations"]
 	var order = req.query.order ? parseOrder(req.query.order) : null
+	var limit = req.query.limit ? Number(req.query.limit) : 1000
+	var offset = req.query.offset ? Number(req.query.offset) : 0
 
 	var procurements = yield procurementsDb.search(sql`
 		SELECT
@@ -55,6 +57,8 @@ exports.router.get("/", next(function*(req, res) {
 			julianday(procurement.published_at, 'localtime') AS bidding_duration,
 
 			COUNT(DISTINCT contract.id) AS contract_count,
+
+			COUNT(procurement.id) OVER () AS of,
 
 			json_group_array(DISTINCT json_object(
 				'id', contract.id,
@@ -178,6 +182,9 @@ exports.router.get("/", next(function*(req, res) {
 			ORDER BY ${ORDER_COLUMNS[order[0]]}
 			${order[1] == "asc" ? sql`ASC` : sql`DESC`}
 		`: sql``}
+
+		LIMIT ${limit}
+		OFFSET ${offset}
 	`)
 
 	procurements.forEach(function(procurement) {
@@ -194,7 +201,9 @@ exports.router.get("/", next(function*(req, res) {
 	res.render("procurements/index_page.jsx", {
 		procurements,
 		filters,
-		order
+		order,
+		limit,
+		offset
 	})
 }))
 

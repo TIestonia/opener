@@ -370,6 +370,35 @@ section.centered {
 			@extend .blue-button;
 		}
 	}
+
+	#pagination {
+		margin-top: 2rem;
+		text-align: center;
+		
+		li {
+			background: white;
+			color: $subtitle-grey;
+			display: inline-block;
+
+			a {
+				display: inline-block;
+				padding: 1rem 1rem;
+			}
+
+			&:not(.current) {
+				@extend .hover-link-button;
+			}
+
+			&.current {
+				color: black;
+				font-weight: bold;
+			}
+
+			& + li {
+				margin-left: 1rem;
+			}
+		}
+	}
 }
 
 .opener-procurements {
