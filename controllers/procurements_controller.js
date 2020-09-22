@@ -5,6 +5,7 @@ var procurementsDb = require("root/db/procurements_db")
 var organizationsDb = require("root/db/organizations_db")
 var contractsDb = require("root/db/procurement_contracts_db")
 var donationsDb = require("root/db/political_party_donations_db")
+var peopleDb = require("root/db/organization_people_db")
 var sql = require("sqlate")
 var next = require("co-next")
 var ID_PATH = "/:country([A-Z][A-Z])::id"
@@ -158,8 +159,11 @@ exports.router.get("/", next(function*(req, res) {
 			AND datetime(donation.date, 'localtime') >=
 				datetime(seller_role.started_at, 'localtime')
 
-			AND datetime(donation.date, 'localtime') <
-				datetime(seller_role.ended_at, 'localtime')
+			AND (
+				datetime(donation.date, 'localtime') <
+				datetime(seller_role.ended_at, 'localtime') OR
+				seller_role.ended_at IS NULL
+			)
 
 			AND datetime(donation.date, 'localtime') >=
 				datetime(buyer_role.started_at, 'localtime')
@@ -222,28 +226,81 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 	var procurement = req.procurement
 
 	var buyer = yield organizationsDb.read(sql`
-		SELECT * FROM organizations
-		WHERE country = ${procurement.buyer_country}
-		AND id = ${procurement.buyer_id}
+		SELECT
+			org.*,
+
+			json_group_array(DISTINCT json_object(
+				'country', person.country,
+				'id', person.id,
+				'name', person.name,
+				'role', role.role,
+				'party_id', party.id,
+				'party_name', party.name
+			)) AS people
+
+		FROM organizations AS org
+
+		LEFT JOIN organization_people AS role
+		ON role.organization_country = org.country
+		AND role.organization_id = org.id
+
+		AND datetime(${procurement.deadline_at}, 'localtime') >=
+			datetime(role.started_at, 'localtime')
+
+		AND (
+			datetime(${procurement.deadline_at}, 'localtime') <
+			datetime(role.ended_at, 'localtime') OR
+			role.ended_at IS NULL
+		)
+
+		LEFT JOIN people AS person
+		ON person.country = role.person_country
+		AND person.id = role.person_id
+
+		LEFT JOIN political_party_members AS party_member
+		ON party_member.normalized_name = person.normalized_name
+		AND party_member.birthdate = person.birthdate
+
+		LEFT JOIN political_parties AS party
+		ON party.id = party_member.party_id
+
+		WHERE org.country = ${procurement.buyer_country}
+		AND org.id = ${procurement.buyer_id}
 	`)
 
-	var contracts = yield contractsDb.search(sql`
+	buyer.people = JSON.parse(buyer.people).filter((p) => p.id)
+
+	var sellers = yield organizationsDb.search(sql`
 		SELECT
-			contract.*,
-			seller.name AS seller_name,
+			seller.*,
+
+			json_group_array(DISTINCT json_object(
+				'country', seller_person.country,
+				'id', seller_person.id,
+				'name', seller_person.name,
+				'party_id', seller_party.id,
+				'party_name', seller_party.name
+			)) AS people,
 
 			json_group_array(DISTINCT json_object(
 				'date', donation.date,
 				'amount', donation.amount,
 				'currency', donation.currency,
+				'party_id', donation.party_id,
 				'party_name', donation_party.name,
-				'donator_country', donator.country,
-				'donator_id', donator.id,
-				'donator_name', donator.name,
+				'donator_country', seller_person.country,
+				'donator_id', seller_person.id,
+				'donator_name', seller_person.name,
 				'donator_role', seller_role.role
 			)) AS donations
 
-		FROM procurement_contracts AS contract
+		FROM organizations AS seller
+
+		JOIN procurement_contracts AS contract
+		ON contract.seller_country = seller.country
+		AND contract.seller_id = seller.id
+		AND contract.procurement_country = ${procurement.country}
+		AND contract.procurement_id = ${procurement.id}
 
 		JOIN procurements AS procurement
 		ON procurement.country = contract.procurement_country
@@ -261,21 +318,33 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 		ON buyer_party_member.normalized_name = buyer_person.normalized_name
 		AND buyer_party_member.birthdate = buyer_person.birthdate
 
-		LEFT JOIN organizations AS seller
-		ON seller.country = contract.seller_country
-		AND seller.id = contract.seller_id
-
 		LEFT JOIN organization_people AS seller_role
 		ON seller_role.organization_country = seller.country
 		AND seller_role.organization_id = seller.id
 
-		LEFT JOIN people AS donator
-		ON donator.country = seller_role.person_country
-		AND donator.id = seller_role.person_id
+		AND datetime(procurement.deadline_at, 'localtime') >=
+			datetime(seller_role.started_at, 'localtime')
+
+		AND (
+			datetime(procurement.deadline_at, 'localtime') <
+			datetime(seller_role.ended_at, 'localtime') OR
+			seller_role.ended_at IS NULL
+		)
+
+		LEFT JOIN people AS seller_person
+		ON seller_person.country = seller_role.person_country
+		AND seller_person.id = seller_role.person_id
+
+		LEFT JOIN political_party_members AS seller_party_member
+		ON seller_party_member.normalized_name = seller_person.normalized_name
+		AND seller_party_member.birthdate = seller_person.birthdate
+
+		LEFT JOIN political_parties AS seller_party
+		ON seller_party.id = seller_party_member.party_id
 
 		LEFT JOIN political_party_donations AS donation
-		ON donation.donator_normalized_name = donator.normalized_name
-		AND donation.donator_birthdate = donator.birthdate
+		ON donation.donator_normalized_name = seller_person.normalized_name
+		AND donation.donator_birthdate = seller_person.birthdate
 		AND donation.party_id = buyer_party_member.party_id
 
 		AND datetime(donation.date, 'localtime') >=
@@ -287,8 +356,11 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 		AND datetime(donation.date, 'localtime') >=
 			datetime(seller_role.started_at, 'localtime')
 
-		AND datetime(donation.date, 'localtime') <
-			datetime(seller_role.ended_at, 'localtime')
+		AND (
+			datetime(donation.date, 'localtime') <
+			datetime(seller_role.ended_at, 'localtime') OR
+			seller_role.ended_at IS NULL
+		)
 
 		AND datetime(donation.date, 'localtime') >=
 			datetime(buyer_role.started_at, 'localtime')
@@ -301,23 +373,30 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 
 		LEFT JOIN political_parties AS donation_party
 		ON donation_party.id = donation.party_id
-
-		WHERE contract.procurement_country = ${procurement.country}
-		AND contract.procurement_id = ${procurement.id}
 		
-		GROUP BY contract.id
+		GROUP BY seller.id
 	`)
 
-	contracts.forEach(function(contract) {
-		var donations = JSON.parse(contract.donations).filter((d) => d.date)
-		donations = donations.map(donationsDb.parse)
-		contract.donations = _.sortBy(donations, "date")
+	sellers.forEach(function(seller) {
+		var people = JSON.parse(seller.people).filter((p) => p.id)
+		seller.people = people.map(peopleDb.parse)
+
+		var donations = JSON.parse(seller.donations).filter((d) => d.date)
+		seller.donations = _.sortBy(donations.map(donationsDb.parse), "date")
 	})
+
+	var contracts = yield contractsDb.search(sql`
+		SELECT contract.*
+		FROM procurement_contracts AS contract
+		WHERE contract.procurement_country = ${procurement.country}
+		AND contract.procurement_id = ${procurement.id}
+	`)
 
 	res.render("procurements/read_page.jsx", {
 		procurement,
 		buyer,
-		contracts
+		contracts,
+		sellers
 	})
 }))
 

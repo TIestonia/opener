@@ -3,7 +3,18 @@
 	"version": "0.0.0",
 	"private": true,
 
+	"dependencies": {
+		"vis-data": "",
+		"vis-network": ""
+	},
+
 	"devDependencies": {
-		"node-sass": "~4"
+		"node-sass": "~4",
+		"browserify": "",
+		"watchify": ""
+	},
+
+	"browser": {
+		"vis-data": "vis-data/peer/umd/vis-data.js"
 	}
 }

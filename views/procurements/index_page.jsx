@@ -241,8 +241,7 @@ function FiltersView(attrs) {
 					}
 					else input.value = ""
 				}
-			})()`}
-			</script>
+			})()`}</script>
 		</form>
 	</div>
 }
