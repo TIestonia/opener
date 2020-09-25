@@ -50,7 +50,7 @@ module.exports = function*(argv) {
 	else if (args["political-party-donations"])
 		yield importPoliticalPartyDonations(args["<name>"], path)
 	else
-		return void process.stdout.write(USAGE_TEXT.trimLeft())
+		process.stdout.write(USAGE_TEXT.trimLeft())
 }
 
 function* importProcurements(path) {
