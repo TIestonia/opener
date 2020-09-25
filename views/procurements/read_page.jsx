@@ -94,7 +94,7 @@ module.exports = function(attrs) {
 			<h1>{procurement.title}</h1>
 
 			<p class="header-subtitle buyer-name">
-				<FlagElement country={procurement.buyer_country} />
+				<FlagElement country={procurement.country} />
 
 				<a
 					class="buyer-name"

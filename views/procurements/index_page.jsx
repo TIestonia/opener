@@ -377,7 +377,7 @@ function ProcurementList(attrs) {
 						</h3>
 
 						{showBuyer ? <p class="buyer-name">
-							<FlagElement country={procurement.buyer_country} />
+							<FlagElement country={procurement.country} />
 
 							<a href={Paths.organizationPath({
 								country: procurement.buyer_country,
