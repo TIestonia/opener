@@ -15,7 +15,7 @@ CREATE TABLE procurements (
 	id TEXT NOT NULL,
 	buyer_country TEXT NOT NULL,
 	buyer_id TEXT NOT NULL,
-	procedure_type TEXT NOT NULL,
+	procedure_type TEXT,
 	cpv_code TEXT,
 	title TEXT NOT NULL,
 	description TEXT NOT NULL DEFAULT '',
@@ -66,7 +66,7 @@ CREATE TABLE procurement_contracts (
 	cost_currency TEXT,
 
 	FOREIGN KEY (procurement_country, procurement_id)
-	REFERENCES procurements (country, id),
+	REFERENCES procurements (country, id) ON DELETE CASCADE,
 
 	FOREIGN KEY (seller_country, seller_id)
 	REFERENCES organizations (country, id),
@@ -181,4 +181,6 @@ INSERT INTO migrations VALUES('20200827130844');
 INSERT INTO migrations VALUES('20200828085756');
 INSERT INTO migrations VALUES('20200828091757');
 INSERT INTO migrations VALUES('20200914222117');
+INSERT INTO migrations VALUES('20200923160352');
+INSERT INTO migrations VALUES('20200924211656');
 COMMIT;

@@ -3,7 +3,7 @@ var _ = require("root/lib/underscore")
 var Jsx = require("j6pack")
 var LIVERELOAD_PORT = process.env.LIVERELOAD_PORT || 35729
 var ENV = process.env.ENV
-var COUNTRY_NAMES = require("root/lib/country_names")
+var COUNTRIES = require("root/lib/countries")
 exports = module.exports = Page
 exports.Header = Header
 exports.Section = Section
@@ -121,13 +121,14 @@ function LiveReload(attrs) {
 }
 
 var COUNTRY_FLAGS = {
-	EE: "/assets/flag-ee.png"
+	EE: "/assets/flag-ee.png",
+	LV: "/assets/flag-lv.png"
 }
 
 function FlagElement(attrs) {
 	var country = attrs.country
 	var src = COUNTRY_FLAGS[country]
-	var name = COUNTRY_NAMES[country]
+	var name = COUNTRIES[country].name
 	return src ? <img class="opener-flag" src={src} alt={name} /> : null
 }
 

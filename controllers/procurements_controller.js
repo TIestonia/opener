@@ -129,7 +129,7 @@ exports.router.get("/", next(function*(req, res) {
 
 		WHERE 1 = 1
 
-		${country ? sql`
+		${country && country[1] ? sql`
 			AND procurement.country = ${country[1]}
 		`: sql``}
 

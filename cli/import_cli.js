@@ -2,6 +2,7 @@ var _ = require("root/lib/underscore")
 var Neodoc = require("neodoc")
 var Cli = require("root/lib/cli")
 var Ted = require("root/lib/ted")
+var Stream = require("root/lib/stream")
 var organizationsDb = require("root/db/organizations_db")
 var procurementsDb = require("root/db/procurements_db")
 var contractsDb = require("root/db/procurement_contracts_db")
@@ -11,13 +12,14 @@ var partyDonationsDb = require("root/db/political_party_donations_db")
 var co = require("co")
 var sql = require("sqlate")
 var sqlite = require("root").sqlite
-var slurpStream = require("root/lib/stream").slurp
 var {ESTONIAN_PROCEDURE_TYPES} = require("root/lib/procurement")
-var COUNTRY_CODES = require("root/lib/country_codes")
+var COUNTRIES_BY_ALPHA3 = _.indexBy(require("root/lib/countries"), "alpha3")
+var LATVIAN_COUNTRY_CODES = require("root/lib/latvian_country_codes")
 
 var USAGE_TEXT = `
 Usage: cli import (-h | --help)
        cli import [options] procurements (<path>|-)
+       cli import [options] procurements-ocds (<path>|-)
        cli import [options] procurements-csv (<path>|-)
        cli import [options] procurement-contracts-csv (<path>|-)
        cli import [options] political-party-members (<path>|-)
@@ -37,6 +39,8 @@ module.exports = function*(argv) {
 
 	if (args.procurements)
 		yield importProcurements(path)
+	else if (args["procurements-ocds"])
+		yield importProcurementsOcds(path)
 	else if (args["procurements-csv"])
 		yield importProcurementsCsv(path)
 	else if (args["procurement-contracts-csv"])
@@ -50,12 +54,145 @@ module.exports = function*(argv) {
 }
 
 function* importProcurements(path) {
-	var xml = yield slurpStream(Cli.readStream(path), "utf8")
+	var xml = yield Stream.slurp(Cli.readStream(path), "utf8")
 	var esenders = Ted.parse(xml)
 
 	yield sqlite(sql`BEGIN`)
 	for (var i = 0; i < esenders.length; ++i) yield Ted.import(esenders[i])
 	yield sqlite(sql`COMMIT`)
+}
+
+function* importProcurementsOcds(path) {
+	yield sqlite(sql`BEGIN`)
+
+	var stream = Cli.readStream(path).pipe(Stream.lines())
+	yield Cli.stream(stream, co.wrap(function*(line) {
+		var obj = JSON.parse(line)
+
+		if (obj.releases.length > 1) throw new Error("Multiple releases")
+		obj = obj.releases[0]
+
+		if (obj.tender.title == null) {
+			console.warn("Ignoring empty procurement: " + obj.tender.id)
+			return
+		}
+
+		var partiesByUuid = _.mapValues(_.indexBy(obj.parties, "id"), parseParty)
+		var buyerAttrs = partiesByUuid[obj.buyer.id]
+
+		var buyer = yield organizationsDb.read(sql`
+			SELECT * FROM organizations
+			WHERE country = ${buyerAttrs.country} AND id = ${buyerAttrs.id}
+		`)
+
+		if (buyer == null) buyer = yield organizationsDb.create(buyerAttrs)
+
+		var tenderObj = obj.tender
+		var lotsById = _.indexBy(tenderObj.lots, "id")
+
+		var tenderNoticeDocument = _.find(tenderObj.documents, {
+			documentType: "tenderNotice"
+		})
+
+		// The date is really a UTC timestamp in ISO 8601.
+		var publishedAt = tenderNoticeDocument
+			? new Date(tenderNoticeDocument.datePublished)
+			: new Date(obj.date)
+
+		var procurement
+		try {
+			procurement = yield procurementsDb.create({
+				country: buyer.country,
+				id: tenderObj.id,
+				title: tenderObj.title,
+				description: tenderObj.description,
+				buyer_country: buyer.country,
+
+				procedure_type: (
+					tenderObj.procurementMethod &&
+					parseProcurementOpentenderProcedureType(
+						tenderObj.procurementMethod,
+						tenderObj.procurementMethodDetails
+					)
+				),
+
+				buyer_id: buyer.id,
+				estimated_cost: tenderObj.value && tenderObj.value.amount,
+				estimated_cost_currency: tenderObj.value && tenderObj.value.currency,
+				published_at: publishedAt,
+
+				deadline_at: (
+					tenderObj.tenderPeriod &&
+					new Date(tenderObj.tenderPeriod.endDate)
+				)
+			})
+		}
+		catch (ex) {
+			if (
+				ex.code == "SQLITE_CONSTRAINT" &&
+				/UNIQUE constraint failed/.test(ex.message)
+			) {
+				console.error("Ignoring duplicate procurement: " + tenderObj.id)
+				return
+			}
+
+			throw ex
+		}
+
+		if (obj.awards) for (var i = 0; i < obj.awards.length; ++i) {
+			var contractObj = obj.awards[i]
+			var lot = lotsById[contractObj.relatedLots[0]]
+			var seller
+
+			if (contractObj.suppliers) {
+				if (contractObj.suppliers.length > 1)
+					console.warn("Multiple suppliers per award for " + procurement.id)
+
+				var sellerAttrs = partiesByUuid[contractObj.suppliers[0].id]
+
+				seller = yield organizationsDb.read(sql`
+					SELECT * FROM organizations
+					WHERE country = ${sellerAttrs.country} AND id = ${sellerAttrs.id}
+				`)
+
+				if (seller == null) seller = yield organizationsDb.create(sellerAttrs)
+			}
+
+			yield contractsDb.create({
+				procurement_country: procurement.country,
+				procurement_id: procurement.id,
+				nr: contractObj.id,
+				seller_country: seller && seller.country,
+				seller_id: seller && seller.id,
+				title: lot.title,
+				estimated_cost: lot.value && lot.value.amount,
+				estimated_cost_currency: lot.value && lot.value.currency,
+				cost: contractObj.value && contractObj.value.amount,
+				cost_currency: contractObj.value && contractObj.value.currency,
+				created_at: new Date(obj.date)
+			})
+		}
+	}))
+
+	yield sqlite(sql`COMMIT`)
+
+	function parseParty(party) {
+		var name = party.name
+		var country = party.address.countryName
+
+		// Some parties have their country name set to an integer value. Presuming
+		// Latvian codes for now. Codes come from
+		// http://open.iub.gov.lv/download/file/XML_birku_atsifrejumi_v4.0.7z
+		// and country_v1.0.ods.
+		if (isFinite(country)) country = LATVIAN_COUNTRY_CODES[country] || country
+		if (isFinite(country)) console.error(country)
+
+		// Not all Opentender procurement parties have their registry code.
+		var id = _.find(party.additionalIdentifiers, {scheme: "ORGANIZATION_ID"})
+		id = id && id.id || party.id
+
+		return {country, id, name}
+	}
 }
 
 function* importProcurementsCsv(path) {
@@ -135,7 +272,7 @@ function* importProcurementContracts(path) {
 		var seller = null
 
 		if (obj.pakkuja_salastatud == "Ei") {
-			var sellerCountry = COUNTRY_CODES[obj.pakkuja_riik]
+			var sellerCountry = COUNTRIES_BY_ALPHA3[obj.pakkuja_riik].alpha2
 			var sellerId = obj.pakkuja_kood
 
 			seller = yield organizationsDb.read(sql`
@@ -266,4 +403,37 @@ function parseProcurementEstonianProcedureType(type) {
 		return ESTONIAN_PROCEDURE_TYPES[type] || type
 	}
 	else throw new RangeError("Invalid procedure type: " + type)
+}
+
+var OPENTENDER_PROCEDURE_TYPE = {
+	pt_open: "open",
+	pt_competitive_negotiation: "competitive-negotation",
+	pt_restricted: "restricted",
+	pt_negotiated_with_prior_call: "negotatiated-with-prior-call",
+	pt_competitive_dialogue: "competitive-dialog",
+
+	// Couldn't confirm that the following exists in TED...
+	pt_negotiated_with_publication_contract_notice:
+		"pt_negotiated_with_publication_contract_notice",
+
+	"f18_pt_negotiated_without_publication_contract_notice":
+		"f18_pt_negotiated_without_publication_contract_notice"
+}
+
+// The `procurementMethodDetails` field seems to mirror the procedure types from
+// TED. The renamed `procurementMethod` values on the other hand is the same
+// for multiple `procurementMethodDetails`.
+function parseProcurementOpentenderProcedureType(type, details) {
+	// Some procurements have their type set to "open" or "selective" and the
+	// details set to an integer value in a string. Some even have the 
+	if (type == "open" && isFinite(details)) return "open"
+	if (type == "selective" && isFinite(details)) return null
+	if (type == "direct" && isFinite(details)) return null
+
+	var procedureType = OPENTENDER_PROCEDURE_TYPE[details]
+
+	if (procedureType == null)
+		throw new RangeError("Invalid procedure type: " + details)
+
+	return procedureType
 }

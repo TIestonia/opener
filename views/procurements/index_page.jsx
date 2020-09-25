@@ -15,8 +15,9 @@ var {FlagElement} = Page
 var {javascript} = require("root/lib/jsx")
 var diffInDays = require("date-fns").differenceInCalendarDays
 var {PROCEDURE_TYPES} = require("root/lib/procurement")
-var COUNTRY_NAMES = require("root/lib/country_names")
+var COUNTRIES = require("root/lib/countries")
 var ROLES = require("root/lib/procurement").ORGANIZATION_ROLES
+var SUPPORTED_COUNTRIES = ["EE", "LV"]
 exports = module.exports = IndexPage
 exports.ProcurementList = ProcurementList
 
@@ -99,6 +100,7 @@ function IndexPage(attrs) {
 function FiltersView(attrs) {
 	var req = attrs.req
 	var filters = attrs.filters
+	var country = filters.country
 	var bidderCount = filters["bidder-count"]
 	var contractCount = filters["contract-count"]
 	var biddingDuration = filters["bidding-duration"]
@@ -123,7 +125,14 @@ function FiltersView(attrs) {
 					<label>Buyer Country</label>
 
 					<select name="country">
-						<option value="EE" selected>Estonia</option>
+						<option value="" selected={!country || !country[1]}>All</option>
+
+						{SUPPORTED_COUNTRIES.map((id) => <option
+							value={id}
+							selected={country && country[1] == id}
+						>
+							{COUNTRIES[id].name}
+						</option>)}
 					</select>
 				</li>
 
@@ -538,7 +547,7 @@ function FilterDescriptionElement(attrs) {
 	var criteria = []
 
 	var country = filters.country
-	if (country) originCriteria = <strong>{COUNTRY_NAMES[country[1]]}</strong>
+	if (country) originCriteria = <strong>{COUNTRIES[country[1]].name}</strong>
 
 	var procedureType = filters["procedure-type"]
 	if (procedureType) criteria.push(_.intercalate([

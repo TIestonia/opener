@@ -190,7 +190,9 @@ module.exports = function(attrs) {
 					<th>Process Type</th>
 					<td>{
 						PROCEDURE_TYPES[procurement.procedure_type] ||
-						ESTONIAN_PROCEDURE_TYPES[procurement.procedure_type]
+						ESTONIAN_PROCEDURE_TYPES[procurement.procedure_type] ||
+							procurement.procedure_type ||
+							"Unknown"
 					}</td>
 				</tr>
 
