@@ -219,7 +219,7 @@ function* importProcurementsCsv(path) {
 			title: obj.nimetus,
 			buyer_country: buyer.country,
 			buyer_id: buyer.id,
-			published_at: _.parseEstonianDateTime(obj.avaldati),
+			published_at: parseEstonianPublishedAt(obj.avaldati),
 			bidder_count: Number(obj.pakkujaid) || 0,
 			bid_count: Number(obj.pakkumusi) || 0,
 			dispute_count: Number(obj.vaidlustusi) || 0,
@@ -436,4 +436,14 @@ function parseProcurementOpentenderProcedureType(type, details) {
 		throw new RangeError("Invalid procedure type: " + details)
 
 	return procedureType
+}
+
+function parseEstonianPublishedAt(time) {
+	// The 2018 Excel table formats dates as MM/DD/YYYY, while the 2019 table
+	// uses DD.MM.YYYY HH:MM:SS.
+	if (time.includes(":")) return _.parseEstonianDateTime(time)
+
+	var match = /^(\d\d)\/(\d\d)\/(\d\d\d\d)$/.exec(time)
+	if (match == null) throw new SyntaxError("Invalid Date: " + time)
+	return new Date(+match[3], +match[1] - 1, +match[2])
 }
