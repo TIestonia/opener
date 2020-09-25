@@ -373,6 +373,8 @@ section.centered {
 	}
 
 	#pagination {
+		max-width: 60rem;
+		margin: 0 auto;
 		margin-top: 2rem;
 		text-align: center;
 		
@@ -380,6 +382,7 @@ section.centered {
 			background: white;
 			color: $subtitle-grey;
 			display: inline-block;
+			margin-bottom: 1rem;
 
 			a {
 				display: inline-block;
