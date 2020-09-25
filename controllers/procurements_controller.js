@@ -273,7 +273,9 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 
 	var sellers = yield organizationsDb.search(sql`
 		SELECT
-			seller.*,
+			seller.country,
+			seller.id,
+			seller.name,
 
 			json_group_array(DISTINCT json_object(
 				'country', seller_person.country,

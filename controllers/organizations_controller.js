@@ -15,7 +15,9 @@ exports.router = Router({mergeParams: true})
 exports.router.get("/", next(function*(_req, res) {
 	var organizations = yield organizationsDb.search(sql`
 		SELECT
-			org.*,
+			org.country,
+			org.id,
+			org.name,
 
 			COUNT(procurement.id) AS procurement_count,
 			SUM(COALESCE(procurement.cost, procurement.estimated_cost, 0))
@@ -44,7 +46,7 @@ exports.router.get("/", next(function*(_req, res) {
 
 exports.router.use(ID_PATH, next(function*(req, _res, next) {
 	var organization = yield organizationsDb.read(sql`
-		SELECT * FROM organizations
+		SELECT country, id, name, url FROM organizations
 		WHERE country = ${req.params.country}
 		AND id = ${req.params.id}
 	`)
