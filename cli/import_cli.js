@@ -277,7 +277,9 @@ function* importProcurementContracts(path) {
 
 		var seller = null
 
-		if (obj.pakkuja_salastatud == "Ei") {
+		// There are a couple of procurement contracts in the 2018 Excel table that
+		// lack a seller, yet don't mark them as secret.
+		if (obj.pakkuja_salastatud == "Ei" && obj.pakkuja_riik) {
 			var sellerCountry = COUNTRIES_BY_ALPHA3[obj.pakkuja_riik].alpha2
 			var sellerId = obj.pakkuja_kood
 
