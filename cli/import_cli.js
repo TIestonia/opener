@@ -261,6 +261,8 @@ function* importProcurementsCsv(path) {
 
 function* importProcurementContracts(path) {
 	yield sqlite(sql`BEGIN`)
+	
+	var i = 0
 
 	yield Cli.stream(Cli.readCsv(path), co.wrap(function*(obj) {
 		var procurementId = obj.viitenumber
@@ -331,9 +333,13 @@ function* importProcurementContracts(path) {
 				? "EUR"
 				: null,
 		})
+
+		if (isImportMilestone(++i)) console.warn("Imported %d contracts.", i)
 	}))
 
 	yield sqlite(sql`COMMIT`)
+
+	console.warn("Imported %d contracts.", i)
 }
 
 function* importPoliticalPartyMembers(path) {
