@@ -375,12 +375,16 @@ function renderGraph(procurement, buyer, contracts, sellers) {
 		person.country + ":" + person.id
 	))
 
-	var peopleNodes = people.map((person) => ({
-		id: `people/${person.country}:${person.id}`,
-		label: person.name,
-		image: "/assets/person-" + _.sexFromPersonalId(person.id)+ ".svg",
-		group: "person"
-	}))
+	var peopleNodes = people.map(function(person) {
+		var sex = person.country == "EE" ? _.sexFromPersonalId(person.id) : "male"
+
+		return {
+			id: `people/${person.country}:${person.id}`,
+			label: person.name,
+			image: "/assets/person-" + sex + ".svg",
+			group: "person"
+		}
+	})
 
 	var sellerNodes = _.uniqBy(sellers.map((seller) => ({
 		id: `organizations/${seller.country}:${seller.id}`,

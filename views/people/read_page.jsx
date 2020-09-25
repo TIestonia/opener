@@ -26,7 +26,9 @@ module.exports = function(attrs) {
 			<p class="header-subtitle birthdate">
 				<FlagElement country={person.country} />
 
-				Born <DateElement at={person.birthdate} />
+				{person.birthdate ? <Fragment>
+					Born <DateElement at={person.birthdate} />
+				</Fragment> : null}
 			</p>
 
 			{person.political_party_name ? <p class="political-party">

@@ -11,10 +11,14 @@ var orgPeopleDb = require("root/db/organization_people_db")
 var peopleDb = require("root/db/people_db")
 var sql = require("sqlate")
 var concat = Array.prototype.concat.bind(Array.prototype)
+var assert = require("assert")
+var COUNTRY_CODES = require("root/lib/estonian_business_register_country_codes")
+var PERSONAL_ID_FORMAT = /^[123456]\d\d\d\d\d\d\d\d\d\d$/
 
 var USAGE_TEXT = `
 Usage: cli estonian-business-register (-h | --help)
-       cli estonian-business-register [options] import <registry-code>
+       cli estonian-business-register [options] import [<registry-code>]
+       cli estonian-business-register [options] reparse [<registry-code>]
 
 Options:
     -h, --help   Display this help and exit.
@@ -31,32 +35,128 @@ module.exports = function*(argv) {
   var args = Neodoc.run(USAGE_TEXT, {argv: argv || ["import"]})
   if (args["--help"]) return void process.stdout.write(USAGE_TEXT.trimLeft())
 
-	if (args.import);
-	else return void process.stdout.write(USAGE_TEXT.trimLeft())
+	if (args.import)
+		yield importOrganizations(args["<registry-code>"])
+	else if (args.reparse)
+		yield reparseOrganizations(args["<registry-code>"])
+	else
+		process.stdout.write(USAGE_TEXT.trimLeft())
+}
 
-	yield sqlite(sql`BEGIN`)
+function* importOrganizations(orgId) {
+	if (orgId != null) {
+		var org = yield organizationsDb.read(sql`
+			SELECT * FROM organizations
+			WHERE country = 'EE' AND id = ${orgId}
+		`)
 
-	var orgId = args["<registry-code>"]
-	var org = yield organizationsDb.read(sql`
-		SELECT * FROM organizations
-		WHERE country = 'EE' AND id = ${orgId}
-	`)
+		if (org == null) {
+			console.warn("Organization not related to procurements: " + orgId)
+			process.exit(1)
+		}
 
-	if (org == null) {
-		console.warn("Organization not related to procurements: " + orgId)
-		process.exit(1)
+		if (org.business_register_data != null) {
+			console.warn("Already imported data from the business register.")
+			process.exit(2)
+		}
+
+		yield sqlite(sql`BEGIN`)
+		yield importForOrganization(org)
+		yield sqlite(sql`COMMIT`)
 	}
+	else {
+		var imported = 0, orgs
 
-	var info = yield readOrganizationFromRegister(orgId)
+		while ((orgs = yield organizationsDb.search(sql`
+			SELECT * FROM organizations
+			WHERE country = 'EE'
+			AND length(id) == 8
+			AND business_register_data IS NULL
+			LIMIT 10
+		`)).length > 0) {
+			for (var i = 0; i < orgs.length; ++i) {
+				let org = orgs[i]
+				yield sqlite(sql`BEGIN`)
+				console.warn("Importing %s (%s)…", org.id, org.name)
+				yield importForOrganization(org)
+				yield sqlite(sql`COMMIT`)
+
+				if ((++imported % 100) == 0)
+					console.warn("Imported %d organizations.", imported)
+			}
+		}
+
+		console.warn("Imported %d organizations.", imported)
+	}
+}
+
+function* reparseOrganizations(orgId) {
+	if (orgId != null) {
+		var org = yield organizationsDb.read(sql`
+			SELECT * FROM organizations
+			WHERE country = 'EE' AND id = ${orgId}
+		`)
+
+		if (org == null) {
+			console.warn("Organization not related to procurements: " + orgId)
+			process.exit(1)
+		}
+
+		yield sqlite(sql`BEGIN`)
+		var info = RegisterXml.parse(org.business_register_data).item
+		yield updateOrganization(org, info)
+		yield sqlite(sql`COMMIT`)
+	}
+	else {
+		var reparsed = 0, orgs
+
+		while ((orgs = yield organizationsDb.search(sql`
+			SELECT * FROM organizations
+			WHERE country = 'EE'
+			AND business_register_data IS NOT NULL
+			ORDER BY business_register_synced_at ASC
+			LIMIT 100
+			OFFSET ${reparsed}
+		`)).length > 0) {
+			yield sqlite(sql`BEGIN`)
+
+			for (var i = 0; i < orgs.length; ++i) {
+				let org = orgs[i]
+
+				console.warn("Reparsing %s (%s)…", org.id, org.name)
+				let info = RegisterXml.parse(org.business_register_data).item
+				yield updateOrganization(org, info)
+
+				if ((++reparsed % 100) == 0)
+					console.warn("Reparsed %d organizations.", reparsed)
+			}
+
+			yield sqlite(sql`COMMIT`)
+		}
+
+		console.warn("Reparsed %d organizations.", reparsed)
+	}
+}
+
+function* importForOrganization(org) {
+	assert(org.country == "EE")
+
+	var info = yield readOrganizationFromRegister(org.id)
 
 	yield organizationsDb.execute(sql`
 		${updateSql("organizations", organizationsDb.serialize({
-			name: info.nimi.$
+			name: info.nimi.$,
+			business_register_data: RegisterXml.serialize({item: info}),
+			business_register_synced_at: new Date
 		}))}
 
-		WHERE country = 'EE' AND id = ${orgId}
+		WHERE country = ${org.country} AND id = ${org.id}
 	`)
 
+	yield updateOrganization(org, info)
+}
+
+function* updateOrganization(org, info) {
 	yield orgPeopleDb.execute(sql`
 		DELETE FROM organization_people
 		WHERE organization_country = ${org.country}
@@ -64,41 +164,59 @@ module.exports = function*(argv) {
 	`)
 
 	var entries = concat(
-		info.isikuandmed.kaardile_kantud_isikud.item,
-		info.isikuandmed.kaardivalised_isikud.item
+		info.isikuandmed.kaardile_kantud_isikud.item || [],
+		info.isikuandmed.kaardivalised_isikud.item || []
 	).filter((e) => (
 		// Only physical people (tyyp == F) and board-level.
-		e.isiku_tyyp.$ == "F" && !IRRELEVALT_ROLES.includes(e.isiku_roll)
+		e.isiku_tyyp.$ == "F" && !IRRELEVALT_ROLES.includes(e.isiku_roll.$)
 	))
 
 	for (var i = 0; i < entries.length; ++i) {
 		var entry = entries[i]
-		var id = entry.isikukood_registrikood && entry.isikukood_registrikood.$
+		var personCountry, personId
+
+		// AS Äripäev has a member of the supervisory board that's got an
+		// <isikukood_registrikood>, but which seems to be set to Sweden's personal
+		// id.
+		if (
+			entry.isikukood_registrikood &&
+			PERSONAL_ID_FORMAT.test(entry.isikukood_registrikood.$)
+		) {
+			personCountry = "EE"
+			personId = entry.isikukood_registrikood.$
+		}
+		// Not all foreigners with a foreign country have a foreign code attached.
+		else if (entry.valis_kood && entry.valis_kood_riik) {
+			personCountry = COUNTRY_CODES[entry.valis_kood_riik.$]
+			personId = entry.valis_kood.$
+		}
+
 		var name = entry.eesnimi.$ + " " + entry.nimi_arinimi.$
 
-		if (id == null) {
+		if (personId == null) {
 			// AS G4S Eesti has a chairman of the supervisory board that only
 			// includes a foreign id, though with no country for context.
-			console.warn(
-				"Missing personal id for %s (entry %s).",
-				name,
-				entry.kirje_id.$
-			)
-
+			var entryId = entry.kirje_id.$
+			console.warn("Missing personal id for %s (entry %s).", name, entryId)
 			continue
 		}
 
 		var person = yield peopleDb.read(sql`
 			SELECT * FROM people
-			WHERE country = 'EE' AND id = ${id}
+			WHERE country = ${personCountry} AND id = ${personId}
 		`)
 
 		if (person == null) person = yield peopleDb.create({
-			country: "EE",
-			id: id,
+			country: personCountry,
+			id: personId,
 			name: name,
 			normalized_name: _.normalizeName(name),
-			birthdate: _.birthdateFromPersonalId(id)
+
+			birthdate: (
+				personCountry == "EE" ? _.birthdateFromPersonalId(personId) :
+				entry.synniaeg ? parseRegisterDate(entry.synniaeg.$) :
+				null
+			)
 		})
 
 		yield orgPeopleDb.create({
@@ -117,15 +235,6 @@ module.exports = function*(argv) {
 			role: entry.isiku_roll.$
 		})
 	}
-
-	yield organizationsDb.execute(sql`
-		${updateSql("organizations", organizationsDb.serialize({
-			business_register_data: RegisterXml.serialize({item: info}),
-			business_register_synced_at: new Date
-		}))} WHERE country = 'EE' AND id = ${orgId}
-	`)
-
-	yield sqlite(sql`COMMIT`)
 }
 
 function readOrganizationFromRegister(code) {

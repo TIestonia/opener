@@ -1248,5 +1248,10 @@
 		"name": "Zimbabwe",
 		"alpha2": "ZW",
 		"alpha3": "ZWE"
+	},
+	"XK": {
+		"name": "Kosovo",
+		"alpha2": "XK",
+		"alpha3": "XXK"
 	}
 }
