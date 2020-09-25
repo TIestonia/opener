@@ -198,6 +198,8 @@ function* importProcurementsOcds(path) {
 function* importProcurementsCsv(path) {
 	yield sqlite(sql`BEGIN`)
 
+	var i = 0
+
 	yield Cli.stream(Cli.readCsv(path), co.wrap(function*(obj) {
 		var buyerId = obj.hankija_kood
 
@@ -248,9 +250,13 @@ function* importProcurementsCsv(path) {
 				? "EUR"
 				: null
 		})
+
+		if (isImportMilestone(++i)) console.warn("Imported %d procurements.", i)
 	}))
 
 	yield sqlite(sql`COMMIT`)
+
+	console.warn("Imported %d procurements.", i)
 }
 
 function* importProcurementContracts(path) {
@@ -447,3 +453,5 @@ function parseEstonianPublishedAt(time) {
 	if (match == null) throw new SyntaxError("Invalid Date: " + time)
 	return new Date(+match[3], +match[1] - 1, +match[2])
 }
+
+function isImportMilestone(i) { return (i % 500) == 0 }
