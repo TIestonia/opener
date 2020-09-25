@@ -91,7 +91,8 @@ exports.router.get("/", next(function*(req, res) {
 		AND buyer.id = procurement.buyer_id
 
 		LEFT JOIN procurement_contracts AS contract
-		ON contract.procurement_id = procurement.id
+		ON contract.procurement_country = procurement.country
+		AND contract.procurement_id = procurement.id
 
 		LEFT JOIN organizations AS seller
 		ON seller.country = contract.seller_country

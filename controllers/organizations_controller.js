@@ -123,7 +123,8 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 		AND buyer.id = procurement.buyer_id
 
 		JOIN procurement_contracts AS contract
-		ON contract.procurement_id = procurement.id
+		ON contract.procurement_country = procurement.country
+		AND contract.procurement_id = procurement.id
 		AND contract.seller_country = ${organization.country}
 		AND contract.seller_id = ${organization.id}
 
