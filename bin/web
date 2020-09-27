@@ -10,13 +10,14 @@ var Express = require("express")
 var Config = require("root/config")
 var HttpError = require("standard-http-error")
 var PORT = process.env.PORT || 2718
+var ENV = process.env.ENV
 
 var app = module.exports = Express()
 app.enable("trust proxy", "loopback")
 app.engine(".jsx", require("j6pack/express"))
 app.set("views", __dirname + "/../views")
 
-if (process.env.ENV == "development") {
+if (ENV == "development" || ENV == "staging") {
 	app.use(Express.static(__dirname + "/../public"))
 }
 
