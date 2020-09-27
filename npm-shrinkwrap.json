@@ -1798,9 +1798,9 @@
       "from": "sqlate@>=2.1.0 <2.2.0"
     },
     "sqlite3": {
-      "version": "4.0.7",
-      "from": "sqlite3@4.0.7",
-      "resolved": "https://registry.npmjs.org/sqlite3/-/sqlite3-4.0.7.tgz",
+      "version": "4.0.8",
+      "from": "sqlite3@4.0.8",
+      "resolved": "https://registry.npmjs.org/sqlite3/-/sqlite3-4.0.8.tgz",
       "dependencies": {
         "nan": {
           "version": "2.14.1",
