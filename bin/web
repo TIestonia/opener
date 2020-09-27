@@ -16,7 +16,10 @@ app.enable("trust proxy", "loopback")
 app.engine(".jsx", require("j6pack/express"))
 app.set("views", __dirname + "/../views")
 
-app.use(Express.static(__dirname + "/../public"))
+if (process.env.ENV == "development") {
+	app.use(Express.static(__dirname + "/../public"))
+}
+
 app.use((req, res, next) => { res.locals.req = req; next() })
 
 app.use(require("cookie-parser")(Config.cookieSecret))
