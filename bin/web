@@ -36,7 +36,7 @@ app.use(function(_req, _res, next) { next(new HttpError(404)) })
 
 app.use(require("root/lib/middleware/error_handler_middleware").bind(null,
 	function(err, _req, res) {
-	if (!(err instanceof HttpError)) res.render("error_page.jsx", {
+	if (!(err instanceof HttpError)) return void res.render("error_page.jsx", {
 		body: "Something unexpected occurred. Please try again or let us know."
 	})
 
