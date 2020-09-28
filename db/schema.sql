@@ -168,8 +168,6 @@ CREATE TABLE political_party_members (
 	CONSTRAINT joined_on_format
 	CHECK (joined_on GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]')
 );
-CREATE INDEX index_procurements_on_country
-ON procurements (country);
 CREATE INDEX index_procurements_on_buyer
 ON procurements (buyer_country, buyer_id);
 CREATE INDEX index_procurement_contracts_on_procurement
@@ -201,4 +199,5 @@ INSERT INTO migrations VALUES('20200923160352');
 INSERT INTO migrations VALUES('20200924211656');
 INSERT INTO migrations VALUES('20200925162535');
 INSERT INTO migrations VALUES('20200925213326');
+INSERT INTO migrations VALUES('20200928115120');
 COMMIT;
