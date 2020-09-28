@@ -3,7 +3,6 @@ var Config = require("root/config")
 var Neodoc = require("neodoc")
 var DateFns = require("date-fns")
 var RegisterXml = require("root/lib/estonian_business_register_xml")
-var api = require("root/lib/estonian_business_register_api")
 var sqlite = require("root").sqlite
 var updateSql = require("heaven-sqlite").update
 var organizationsDb = require("root/db/organizations_db")
@@ -12,6 +11,8 @@ var peopleDb = require("root/db/people_db")
 var sql = require("sqlate")
 var concat = Array.prototype.concat.bind(Array.prototype)
 var assert = require("assert")
+var fetch = require("fetch-off")
+var URL = "https://ariregxmlv6.rik.ee"
 var COUNTRY_CODES = require("root/lib/estonian_business_register_country_codes")
 var PERSONAL_ID_FORMAT = /^[123456]\d\d\d\d\d\d\d\d\d\d$/
 
@@ -31,6 +32,14 @@ var IRRELEVALT_ROLES = [
 	"M", // Auditor of valuation of non-monetary contribution
 	"PANKR" // Trustee in bankruptcy
 ]
+
+var api = require("fetch-defaults")(fetch, URL, {
+	timeout: 10000,
+	headers: {Accept: "application/soap+xml"}
+})
+
+api = require("fetch-parse")(api, {xml: true})
+api = require("fetch-throw")(api)
 
 module.exports = function*(argv) {
   var args = Neodoc.run(USAGE_TEXT, {argv: argv || ["import"]})
@@ -62,7 +71,7 @@ function* importOrganizations(orgId) {
 		}
 
 		yield sqlite(sql`BEGIN`)
-		yield importForOrganization(org)
+		yield importOrganization(org)
 		yield sqlite(sql`COMMIT`)
 	}
 	else {
@@ -79,7 +88,7 @@ function* importOrganizations(orgId) {
 				let org = orgs[i]
 				yield sqlite(sql`BEGIN`)
 				console.warn("Importing %s (%s)…", org.id, org.name)
-				yield importForOrganization(org)
+				yield importOrganization(org)
 				yield sqlite(sql`COMMIT`)
 
 				if ((++imported % 100) == 0)
@@ -139,7 +148,7 @@ function* reparseOrganizations(orgId) {
 	}
 }
 
-function* importForOrganization(org) {
+function* importOrganization(org) {
 	assert(org.country == "EE")
 
 	var info = yield readOrganizationFromRegister(org.id)
