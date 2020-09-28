@@ -23,6 +23,7 @@ Usage: cli estonian-business-register (-h | --help)
 Options:
     -h, --help   Display this help and exit.
 `
+
 var IRRELEVALT_ROLES = [
 	"D", // Auditor
 	"S", // Stockholder
