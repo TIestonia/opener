@@ -503,8 +503,9 @@ function ProcurementList(attrs) {
 
 							<td>
 								<a class="link-button" href={Paths.personPath({
+									id: donation.donator_id,
 									country: donation.donator_country,
-									id: donation.donator_id
+									personal_id: donation.donator_personal_id
 								})}>{donation.donator_name}</a>
 							</td>
 

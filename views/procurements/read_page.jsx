@@ -286,8 +286,9 @@ module.exports = function(attrs) {
 
 									<td>
 										<a class="link-button" href={Paths.personPath({
+											id: donation.donator_id,
 											country: donation.donator_country,
-											id: donation.donator_id
+											personal_id: donation.donator_personal_id
 										})}>{donation.donator_name}</a>
 									</td>
 
@@ -376,7 +377,9 @@ function renderGraph(procurement, buyer, contracts, sellers) {
 	))
 
 	var peopleNodes = people.map(function(person) {
-		var sex = person.country == "EE" ? _.sexFromPersonalId(person.id) : "male"
+		var sex = person.country == "EE"
+			? _.sexFromPersonalId(person.personal_id)
+			: "male"
 
 		return {
 			id: `people/${person.country}:${person.id}`,

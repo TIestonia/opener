@@ -76,7 +76,6 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 		JOIN organization_people AS role
 		ON role.organization_country = ${organization.country}
 		AND role.organization_id = ${organization.id}
-		AND role.person_country = person.country
 		AND role.person_id = person.id
 
 		LEFT JOIN political_party_members AS member

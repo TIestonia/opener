@@ -7,11 +7,14 @@ var donationsDb = require("root/db/political_party_donations_db")
 var orgPeopleDb = require("root/db/organization_people_db")
 var next = require("co-next")
 var sql = require("sqlate")
-var ID_PATH = "/:country([A-Z][A-Z])::id"
 
 exports.router = Router({mergeParams: true})
 
-exports.router.use(ID_PATH, next(function*(req, _res, next) {
+exports.router.use("/:id", next(function*(req, _res, next) {
+	var id, country, personalId
+	if (!req.params.id.includes(":")) id = Number(req.params.id)
+	else [country, personalId] = req.params.id.split(":")
+
 	var person = yield peopleDb.read(sql`
 		SELECT
 			person.*,
@@ -26,10 +29,9 @@ exports.router.use(ID_PATH, next(function*(req, _res, next) {
 
 		LEFT JOIN political_parties AS party ON party.id = member.party_id
 
-		WHERE person.country = ${req.params.country}
-		AND person.id = ${req.params.id}
+		WHERE person.id = ${id}
+		OR person.country = ${country} AND person.personal_id = ${personalId}
 	`)
-
 
 	if (person == null) throw new HttpError(404)
 
@@ -42,7 +44,7 @@ exports.router.use(ID_PATH, next(function*(req, _res, next) {
 	next()
 }))
 
-exports.router.get(ID_PATH, next(function*(req, res) {
+exports.router.get("/:id", next(function*(req, res) {
 	var person = req.person
 
 	var organizations = yield organizationsDb.search(sql`

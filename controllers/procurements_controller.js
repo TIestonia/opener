@@ -77,8 +77,9 @@ exports.router.get("/", next(function*(req, res) {
 					'amount', donation.amount,
 					'currency', donation.currency,
 					'party_name', donation_party.name,
-					'donator_country', donator.country,
 					'donator_id', donator.id,
+					'donator_country', donator.country,
+					'donator_personal_id', donator.personal_id,
 					'donator_name', donator.name,
 					'donator_role', seller_role.role
 				)) AS donations
@@ -104,8 +105,7 @@ exports.router.get("/", next(function*(req, res) {
 			AND buyer_role.organization_id = buyer.id
 
 			JOIN people AS buyer_person
-			ON buyer_person.country = buyer_role.person_country
-			AND buyer_person.id = buyer_role.person_id
+			ON buyer_person.id = buyer_role.person_id
 
 			JOIN political_party_members AS buyer_party_member
 			ON buyer_party_member.normalized_name = buyer_person.normalized_name
@@ -115,9 +115,7 @@ exports.router.get("/", next(function*(req, res) {
 			ON seller_role.organization_country = seller.country
 			AND seller_role.organization_id = seller.id
 
-			JOIN people AS donator
-			ON donator.country = seller_role.person_country
-			AND donator.id = seller_role.person_id
+			JOIN people AS donator ON donator.id = seller_role.person_id
 
 			JOIN political_party_donations AS donation
 			ON donation.donator_normalized_name = donator.normalized_name
@@ -231,8 +229,9 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 			org.*,
 
 			json_group_array(DISTINCT json_object(
-				'country', person.country,
 				'id', person.id,
+				'country', person.country,
+				'personal_id', person.personal_id,
 				'name', person.name,
 				'role', role.role,
 				'party_id', party.id,
@@ -254,9 +253,7 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 			role.ended_at IS NULL
 		)
 
-		LEFT JOIN people AS person
-		ON person.country = role.person_country
-		AND person.id = role.person_id
+		LEFT JOIN people AS person ON person.id = role.person_id
 
 		LEFT JOIN political_party_members AS party_member
 		ON party_member.normalized_name = person.normalized_name
@@ -278,8 +275,9 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 			seller.name,
 
 			json_group_array(DISTINCT json_object(
-				'country', seller_person.country,
 				'id', seller_person.id,
+				'country', seller_person.country,
+				'personal_id', seller_person.personal_id,
 				'name', seller_person.name,
 				'party_id', seller_party.id,
 				'party_name', seller_party.name
@@ -291,8 +289,9 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 				'currency', donation.currency,
 				'party_id', donation.party_id,
 				'party_name', donation_party.name,
-				'donator_country', seller_person.country,
 				'donator_id', seller_person.id,
+				'donator_country', seller_person.country,
+				'donator_personal_id', seller_person.personal_id,
 				'donator_name', seller_person.name,
 				'donator_role', seller_role.role
 			)) AS donations
@@ -313,9 +312,7 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 		ON buyer_role.organization_country = procurement.buyer_country
 		AND buyer_role.organization_id = procurement.buyer_id
 
-		LEFT JOIN people AS buyer_person
-		ON buyer_person.country = buyer_role.person_country
-		AND buyer_person.id = buyer_role.person_id
+		LEFT JOIN people AS buyer_person ON buyer_person.id = buyer_role.person_id
 
 		LEFT JOIN political_party_members AS buyer_party_member
 		ON buyer_party_member.normalized_name = buyer_person.normalized_name
@@ -335,8 +332,7 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 		)
 
 		LEFT JOIN people AS seller_person
-		ON seller_person.country = seller_role.person_country
-		AND seller_person.id = seller_role.person_id
+		ON seller_person.id = seller_role.person_id
 
 		LEFT JOIN political_party_members AS seller_party_member
 		ON seller_party_member.normalized_name = seller_person.normalized_name

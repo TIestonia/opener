@@ -220,12 +220,12 @@ function* updateOrganization(org, info) {
 
 		var person = yield peopleDb.read(sql`
 			SELECT * FROM people
-			WHERE country = ${personCountry} AND id = ${personalId}
+			WHERE country = ${personCountry} AND personal_id = ${personalId}
 		`)
 
 		if (person == null) person = yield peopleDb.create({
 			country: personCountry,
-			id: personalId,
+			personal_id: personalId,
 			name: name,
 			normalized_name: _.normalizeName(name),
 
@@ -239,8 +239,10 @@ function* updateOrganization(org, info) {
 		yield orgPeopleDb.create({
 			organization_country: org.country,
 			organization_id: org.id,
-			person_country: person.country,
 			person_id: person.id,
+			person_country: person.country,
+			person_personal_id: person.personal_id,
+			person_birthdate: person.birthdate,
 			started_at: parseRegisterDate(entry.algus_kpv.$),
 
 			// Unknown yet whether the end date is inclusive or exclusive.

@@ -85,37 +85,6 @@ CREATE TABLE procurement_contracts (
 	CONSTRAINT cost_currency_format
 	CHECK (cost_currency GLOB '[A-Z][A-Z][A-Z]')
 );
-CREATE TABLE people (
-	country TEXT NOT NULL,
-	id TEXT NOT NULL,
-	name TEXT COLLATE NOCASE NOT NULL,
-	normalized_name TEXT NOT NULL,
-	birthdate TEXT,
-
-	PRIMARY KEY (country, id),
-
-	CONSTRAINT country_format CHECK (country GLOB '[A-Z][A-Z]'),
-	CONSTRAINT name_length CHECK (length(name) > 0)
-	CONSTRAINT normalized_name_length CHECK (length(normalized_name) > 0),
-
-	CONSTRAINT birthdate_format
-	CHECK (birthdate GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]')
-);
-CREATE TABLE organization_people (
-	organization_country TEXT NOT NULL,
-	organization_id TEXT NOT NULL,
-	person_country TEXT NOT NULL,
-	person_id TEXT NOT NULL,
-	role TEXT NOT NULL,
-	started_at TEXT NOT NULL,
-	ended_at TEXT,
-
-	FOREIGN KEY (organization_country, organization_id)
-	REFERENCES organizations (country, id),
-
-	FOREIGN KEY (person_country, person_id)
-	REFERENCES people (country, id)
-);
 CREATE TABLE political_parties (
 	id INTEGER PRIMARY KEY NOT NULL,
 	country TEXT NOT NULL,
@@ -174,14 +143,62 @@ CREATE INDEX index_procurement_contracts_on_procurement
 ON procurement_contracts (procurement_country, procurement_id);
 CREATE INDEX index_procurement_contracts_on_seller
 ON procurement_contracts (seller_country, seller_id);
-CREATE INDEX index_organization_people_on_organization
-ON organization_people (organization_country, organization_id);
-CREATE INDEX index_organization_people_on_person
-ON organization_people (person_country, person_id);
 CREATE INDEX index_political_party_donations_on_donator
 ON political_party_donations (donator_normalized_name, donator_birthdate);
 CREATE INDEX index_political_party_members_on_normalized_name_and_birthdate
 ON political_party_members (normalized_name, birthdate);
+CREATE TABLE IF NOT EXISTS "people" (
+	id INTEGER PRIMARY KEY NOT NULL,
+	country TEXT NOT NULL,
+	personal_id TEXT,
+	name TEXT NOT NULL,
+	normalized_name TEXT NOT NULL,
+	birthdate TEXT,
+
+	CONSTRAINT country_format CHECK (country GLOB '[A-Z][A-Z]'),
+	CONSTRAINT personal_id_length CHECK (length(personal_id) > 0)
+	CONSTRAINT name_length CHECK (length(name) > 0)
+	CONSTRAINT normalized_name_length CHECK (length(normalized_name) > 0),
+
+	CONSTRAINT birthdate_format
+	CHECK (birthdate GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+
+	CONSTRAINT personal_id_or_birthdate
+	CHECK (personal_id IS NOT NULL OR birthdate IS NOT NULL)
+);
+CREATE UNIQUE INDEX index_people_on_country_and_personal_id
+ON people (country, personal_id);
+CREATE INDEX index_people_on_country_and_name_and_birthdate
+ON people (country, normalized_name, birthdate);
+CREATE TABLE IF NOT EXISTS "organization_people" (
+	organization_country TEXT NOT NULL,
+	organization_id TEXT NOT NULL,
+	person_id INTEGER NOT NULL,
+	person_country TEXT NOT NULL,
+	person_personal_id TEXT,
+	person_birthdate TEXT,
+	role TEXT NOT NULL,
+	started_at TEXT NOT NULL,
+	ended_at TEXT,
+
+	FOREIGN KEY (organization_country, organization_id)
+	REFERENCES organizations (country, id),
+
+	FOREIGN KEY (person_id) REFERENCES people (id),
+
+	FOREIGN KEY (person_country, person_personal_id)
+	REFERENCES people (country, personal_id),
+
+	CONSTRAINT person_birthdate_format
+	CHECK (person_birthdate GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+
+	CONSTRAINT person_personal_id_or_birthdate
+	CHECK (person_personal_id IS NOT NULL OR person_birthdate IS NOT NULL)
+);
+CREATE INDEX index_organization_people_on_organization
+ON organization_people (organization_country, organization_id);
+CREATE INDEX index_organization_people_on_person_id
+ON organization_people (person_id);
 
 PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
@@ -200,4 +217,5 @@ INSERT INTO migrations VALUES('20200924211656');
 INSERT INTO migrations VALUES('20200925162535');
 INSERT INTO migrations VALUES('20200925213326');
 INSERT INTO migrations VALUES('20200928115120');
+INSERT INTO migrations VALUES('20200929163606');
 COMMIT;
