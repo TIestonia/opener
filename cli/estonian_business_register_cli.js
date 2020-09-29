@@ -155,7 +155,6 @@ function* importOrganization(org) {
 
 	yield organizationsDb.execute(sql`
 		${updateSql("organizations", organizationsDb.serialize({
-			name: info.nimi.$,
 			business_register_data: RegisterXml.serialize({item: info}),
 			business_register_synced_at: new Date
 		}))}
@@ -167,6 +166,14 @@ function* importOrganization(org) {
 }
 
 function* updateOrganization(org, info) {
+	yield organizationsDb.execute(sql`
+		${updateSql("organizations", organizationsDb.serialize({
+			name: info.nimi.$
+		}))}
+
+		WHERE country = ${org.country} AND id = ${org.id}
+	`)
+
 	yield orgPeopleDb.execute(sql`
 		DELETE FROM organization_people
 		WHERE organization_country = ${org.country}
