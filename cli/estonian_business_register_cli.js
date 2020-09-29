@@ -190,7 +190,7 @@ function* updateOrganization(org, info) {
 
 	for (var i = 0; i < entries.length; ++i) {
 		var entry = entries[i]
-		var personCountry, personId
+		var personCountry, personalId
 
 		// AS Äripäev has a member of the supervisory board that's got an
 		// <isikukood_registrikood>, but which seems to be set to Sweden's personal
@@ -200,17 +200,17 @@ function* updateOrganization(org, info) {
 			PERSONAL_ID_FORMAT.test(entry.isikukood_registrikood.$)
 		) {
 			personCountry = "EE"
-			personId = entry.isikukood_registrikood.$
+			personalId = entry.isikukood_registrikood.$
 		}
 		// Not all foreigners with a foreign country have a foreign code attached.
 		else if (entry.valis_kood && entry.valis_kood_riik) {
 			personCountry = COUNTRY_CODES[entry.valis_kood_riik.$]
-			personId = entry.valis_kood.$
+			personalId = entry.valis_kood.$
 		}
 
 		var name = entry.eesnimi.$ + " " + entry.nimi_arinimi.$
 
-		if (personId == null) {
+		if (personalId == null) {
 			// AS G4S Eesti has a chairman of the supervisory board that only
 			// includes a foreign id, though with no country for context.
 			var entryId = entry.kirje_id.$
@@ -220,17 +220,17 @@ function* updateOrganization(org, info) {
 
 		var person = yield peopleDb.read(sql`
 			SELECT * FROM people
-			WHERE country = ${personCountry} AND id = ${personId}
+			WHERE country = ${personCountry} AND id = ${personalId}
 		`)
 
 		if (person == null) person = yield peopleDb.create({
 			country: personCountry,
-			id: personId,
+			id: personalId,
 			name: name,
 			normalized_name: _.normalizeName(name),
 
 			birthdate: (
-				personCountry == "EE" ? _.birthdateFromPersonalId(personId) :
+				personCountry == "EE" ? _.birthdateFromPersonalId(personalId) :
 				entry.synniaeg ? parseRegisterDate(entry.synniaeg.$) :
 				null
 			)
