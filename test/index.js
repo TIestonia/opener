@@ -1,4 +1,4 @@
-var _ = require("lodash")
+var _ = require("root/lib/underscore")
 var Mocha = require("mocha")
 var slice = Function.call.bind(Array.prototype.slice)
 var CACHE = require.cache
