@@ -164,7 +164,7 @@ function* importProcurementsOcds(path) {
 				nr: contractObj.id,
 				seller_country: seller && seller.country,
 				seller_id: seller && seller.id,
-				title: lot.title,
+				title: lot.title || lot.description,
 				estimated_cost: lot.value && lot.value.amount,
 				estimated_cost_currency: lot.value && lot.value.currency,
 				cost: contractObj.value && contractObj.value.amount,
@@ -425,6 +425,7 @@ var OPENTENDER_PROCEDURE_TYPE = {
 	pt_restricted: "restricted",
 	pt_negotiated_with_prior_call: "negotatiated-with-prior-call",
 	pt_competitive_dialogue: "competitive-dialog",
+	pt_innovation_partnership: "Innovation partnership",
 
 	// Couldn't confirm that the following exists in TED...
 	pt_negotiated_with_publication_contract_notice:
@@ -439,8 +440,9 @@ var OPENTENDER_PROCEDURE_TYPE = {
 // for multiple `procurementMethodDetails`.
 function parseProcurementOpentenderProcedureType(type, details) {
 	// Some procurements have their type set to "open" or "selective" and the
-	// details set to an integer value in a string. Some even have the 
+	// details set to an integer value in a string.
 	if (type == "open" && isFinite(details)) return "open"
+	if (type == "open" && details == "OPEN") return "open"
 	if (type == "selective" && isFinite(details)) return null
 	if (type == "direct" && isFinite(details)) return null
 
