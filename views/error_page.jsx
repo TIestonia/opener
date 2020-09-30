@@ -9,7 +9,10 @@ module.exports = function(attrs) {
 	var body = attrs.body
 
 	return <Page page="error" req={attrs.req} title="An error occurred">
-		<Header>{title || "An error occurred. Sorry!"}</Header>
+		<Header>
+			<h1>{title || "An error occurred. Sorry!"}</h1>
+		</Header>
+
 		<Section>{body ? <p>{body}</p> : null}</Section>
 	</Page>
 }
