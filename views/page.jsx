@@ -44,6 +44,10 @@ function Page(attrs, children) {
 							<li class={prefixed("/organizations/", path)}>
 								<a href="/organizations">Organizations</a>
 							</li>
+
+							<li class={selected("/about", path)}>
+								<a href="/about">About</a>
+							</li>
 						</ul>
 					</menu>
 				</Centered>
@@ -134,4 +138,8 @@ function FlagElement(attrs) {
 
 function prefixed(prefix, path) {
 	return path.startsWith(prefix) ? "selected" : ""
+}
+
+function selected(prefix, path) {
+	return prefix == path ? "selected" : ""
 }

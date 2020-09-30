@@ -25,9 +25,8 @@ app.use((req, res, next) => { res.locals.req = req; next() })
 
 app.use(require("cookie-parser")(Config.cookieSecret))
 
-app.get("/", (_req, res) => res.redirect("/procurements"))
-
 _.each({
+	"/": require("../controllers/home_controller").router,
 	"/organizations": require("../controllers/organizations_controller").router,
 	"/procurements": require("../controllers/procurements_controller").router,
 	"/people": require("../controllers/people_controller").router
