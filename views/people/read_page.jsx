@@ -65,7 +65,7 @@ module.exports = function(attrs) {
 
 							<td class="role-column role">
 								{lastRole.ended_at
-									? "Was " + ROLES[lastRole.role].toLowerCase() + "."
+									? "Was " + ROLES[lastRole.role]
 									: ROLES[lastRole.role]
 								}
 							</td>

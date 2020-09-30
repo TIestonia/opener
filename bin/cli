@@ -15,6 +15,7 @@ Options:
 Commands:
     import                      Import procurements and related data.
     estonian-business-register  Sync with the Estonian Business Register.
+    latvian-business-register   Sync with the Latvian Business Register.
 
 For more help or to give feedback, please see https://opener.ee.
 `
@@ -32,7 +33,9 @@ var CLIS = {
   import:
 		require.resolve("root/cli/import_cli"),
   "estonian-business-register":
-		require.resolve("root/cli/estonian_business_register_cli")
+		require.resolve("root/cli/estonian_business_register_cli"),
+  "latvian-business-register":
+		require.resolve("root/cli/latvian_business_register_cli")
 }
 
 var cmdPath = CLIS[cmd]

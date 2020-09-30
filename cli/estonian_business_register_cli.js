@@ -80,7 +80,7 @@ function* importOrganizations(orgId) {
 		while ((orgs = yield organizationsDb.search(sql`
 			SELECT * FROM organizations
 			WHERE country = 'EE'
-			AND length(id) == 8
+			AND id GLOB '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
 			AND business_register_data IS NULL
 			LIMIT 10
 		`)).length > 0) {
@@ -230,7 +230,7 @@ function* updateOrganization(org, info) {
 			normalized_name: _.normalizeName(name),
 
 			birthdate: (
-				personCountry == "EE" ? _.birthdateFromPersonalId(personalId) :
+				personCountry == "EE" ? _.birthdateFromEstonianPersonalId(personalId) :
 				entry.synniaeg ? parseRegisterDate(entry.synniaeg.$) :
 				null
 			)
@@ -251,7 +251,7 @@ function* updateOrganization(org, info) {
 				? DateFns.addDays(parseRegisterDate(entry.lopp_kpv.$), 1)
 				: null,
 
-			role: entry.isiku_roll.$
+			role: parseRole(entry.isiku_roll.$)
 		})
 	}
 }
@@ -298,6 +298,52 @@ function readOrganizationFromRegister(code) {
 		var orgs = soap.detailandmed_v3Response.keha.ettevotjad.item || null
 		return orgs || (orgs instanceof Array ? orgs[0].item : orgs.item)
 	})
+}
+
+// Values come from klassifikaatorid_v1 response.
+// http://www2.rik.ee/schemas/xtee6/arireg/live/xroad6_klassifikaatorid_v1.xsd
+// See the Makefile for a request task.
+var ROLES = {
+	A: "founder",
+	AJPH: "interim_bankcruptcy_trustee",
+	ASES: "authorized_representative",
+	B: "founder",
+	D: "auditor",
+	DOKH: "depositary_of_documents",
+	E: "chair_of_supervisory_board",
+	ETTEV: "entrepreneur",
+	EUSOS2: "limited_partner_representative",
+	FIE: "sole_trader",
+	HNKL: "administrative_board_member",
+	JUHA: "executive_board_sole_member",
+	JUHE: "chair_of_executive_board",
+	JUHJ: "director_of_executive_board",
+	JUHL: "executive_board_member",
+	JPNKR: "supervising_bankcruptcy_trustee",
+	KISIK: "contact",
+	LIKV: "liquidator",
+	LIKVJ: "executive_board_liquidator_member",
+	M: "auditor_of_nonmonetary_contribution",
+	MDKPI: "person_for_procedural_documents",
+	N: "supervisory_board_member",
+	O: "shareholder",
+	P: "bankcruptcy_committee_member",
+	PANKR: "bankcruptcy_trustee",
+	PROK: "procurator",
+	R: "auditing_committee_member",
+	S: "shareholder",
+	SJESI: "representantive",
+	TOSAN: "general_partner",
+	UOSAN: "limited_partner",
+	V: "authorized_person",
+	VFILJ: "branch_director",
+	YHLLV: "association_member"
+}
+
+function parseRole(estonianRole) {
+	var role = ROLES[estonianRole]
+	if (role == null) throw new RangeError(`Invalid role: ${estonianRole}`)
+	return role
 }
 
 function parseRegisterDate(date) {

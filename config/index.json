@@ -1,5 +1,9 @@
 {
 	"cookieSecret": null,
 	"estonianBusinessRegisterUser": null,
-	"estonianBusinessRegisterPassword": null
+	"estonianBusinessRegisterPassword": null,
+	"latvianBusinessRegisterClientId": null,
+	"latvianBusinessRegisterClientSecret": null,
+	"latvianBusinessRegisterClientCertificate": null,
+	"latvianBusinessRegisterClientPrivateKey": null
 }
