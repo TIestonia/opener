@@ -13,8 +13,10 @@ var co = require("co")
 var sql = require("sqlate")
 var sqlite = require("root").sqlite
 var {ESTONIAN_PROCEDURE_TYPES} = require("root/lib/procurement")
-var COUNTRIES_BY_ALPHA3 = _.indexBy(require("root/lib/countries"), "alpha3")
+var COUNTRIES = require("root/lib/countries")
+var COUNTRIES_BY_ALPHA3 = _.indexBy(COUNTRIES, "alpha3")
 var LATVIAN_COUNTRY_CODES = require("root/lib/latvian_country_codes")
+var OPENTENDER_COUNTRIES = {UK: "GB"}
 
 var USAGE_TEXT = `
 Usage: cli import (-h | --help)
@@ -185,7 +187,10 @@ function* importProcurementsOcds(path) {
 		// http://open.iub.gov.lv/download/file/XML_birku_atsifrejumi_v4.0.7z
 		// and country_v1.0.ods.
 		if (isFinite(country)) country = LATVIAN_COUNTRY_CODES[country] || country
-		if (isFinite(country)) console.error(country)
+		else country = OPENTENDER_COUNTRIES[country] || country
+
+		if (!(country in COUNTRIES))
+			throw new RangeError("Invalid country: " + country)
 
 		// Not all Opentender procurement parties have their registry code.
 		var id = _.find(party.additionalIdentifiers, {scheme: "ORGANIZATION_ID"})
