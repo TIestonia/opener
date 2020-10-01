@@ -650,6 +650,17 @@ section.centered {
 				@extend .opener-table-row-title;
 			}
 
+			.country {
+				@extend .opener-table-row-subtitle;
+				color: $subtitle-grey;
+
+				.opener-flag {
+					margin-right: 1rem;
+					width: 2rem;
+					vertical-align: middle;
+				}
+			}
+
 			strong {
 				font-weight: bold;
 				color: black;

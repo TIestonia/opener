@@ -8,6 +8,8 @@ var {Header} = Page
 var {Section} = Page
 var {Table} = Page
 var {MoneyElement} = Page
+var {FlagElement} = Page
+var COUNTRIES = require("root/lib/countries")
 
 module.exports = function(attrs) {
 	var organizations = attrs.organizations
@@ -37,6 +39,11 @@ module.exports = function(attrs) {
 									{org.name}
 								</a>
 							</h3>
+
+							<p class="country">
+								<FlagElement country={org.country} alt={false} />
+								{COUNTRIES[org.country].name}
+							</p>
 						</td>
 
 						<td class="procurements-column">

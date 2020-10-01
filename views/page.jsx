@@ -129,11 +129,12 @@ var COUNTRY_FLAGS = {
 	LV: "/assets/flag-lv.png"
 }
 
-function FlagElement(attrs) {
-	var country = attrs.country
+function FlagElement({country, alt}) {
 	var src = COUNTRY_FLAGS[country]
-	var name = COUNTRIES[country].name
-	return src ? <img class="opener-flag" src={src} alt={name} /> : null
+	if (src == null) return null
+
+	var name = alt == null || alt ? COUNTRIES[country].name : null
+	return <img class="opener-flag" src={src} alt={name} />
 }
 
 function prefixed(prefix, path) {
