@@ -1,6 +1,7 @@
 var _ = require("root/lib/underscore")
 var Router = require("express").Router
 var HttpError = require("standard-http-error")
+var DateFns = require("date-fns")
 var procurementsDb = require("root/db/procurements_db")
 var organizationsDb = require("root/db/organizations_db")
 var contractsDb = require("root/db/procurement_contracts_db")
@@ -21,6 +22,8 @@ var COMPARATORS = {
 
 var FILTERS = [
 	"country",
+	"published-since",
+	"published-until",
 	"bidder-count",
 	"contract-count",
 	"bidding-duration",
@@ -40,6 +43,8 @@ var ORDER_COLUMNS = {
 exports.router.get("/", next(function*(req, res) {
 	var filters = parseFilters(req.query)
 	var country = filters.country
+	var publishedSince = filters["published-since"]
+	var publishedUntil = filters["published-until"]
 	var bidderCount = filters["bidder-count"]
 	var contractCount = filters["contract-count"]
 	var biddingDuration = filters["bidding-duration"]
@@ -130,6 +135,14 @@ exports.router.get("/", next(function*(req, res) {
 
 		${country && country[1] ? sql`
 			AND procurement.country = ${country[1]}
+		`: sql``}
+
+		${publishedSince && publishedSince[1] ? sql`
+			AND procurement.published_at >= ${DateFns.startOfDay(publishedSince[1])}
+		`: sql``}
+
+		${publishedUntil && publishedUntil[1] ? sql`
+			AND procurement.published_at <= ${DateFns.endOfDay(publishedUntil[1])}
 		`: sql``}
 
 		${procedureType ? sql`

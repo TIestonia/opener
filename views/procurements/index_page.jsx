@@ -61,7 +61,7 @@ function IndexPage(attrs) {
 
 		<Section>
 			<p class="intro-text">
-				Here you can review and filter public procurements from Estonia and Latvia. Try filtering for <a href={path + "?bidding-duration<14d&bidder-count=1"} class="example-filter-link">Single bidder procurements with brief bidding periods</a> or <a href={path + "?political-party-donations<=12"} class="example-filter-link">Contracts won after political donations</a>, or create your own below.
+				Here you can review and filter public procurements from <a href={path + "?country=EE"} class="example-filter-link">Estonia</a> and <a href={path + "?country=LV"} class="example-filter-link">Latvia</a> from 2018–2019. Try filtering for <a href={path + "?bidding-duration<14d&bidder-count=1"} class="example-filter-link">Single bidder procurements with brief bidding periods</a> or <a href={path + "?political-party-donations<=12"} class="example-filter-link">Contracts won after political donations</a>, or create your own below.
 			</p>
 		</Section>
 
@@ -76,7 +76,11 @@ function IndexPage(attrs) {
 				<FilterDescriptionElement filters={filters} order={order} />
 			: null}
 
-			<FiltersView req={req} filters={filters} order={order} />
+			<FiltersView
+				req={req}
+				filters={filters}
+				order={order}
+			/>
 
 			<ProcurementList
 				path={path}
@@ -99,8 +103,10 @@ function IndexPage(attrs) {
 
 function FiltersView(attrs) {
 	var req = attrs.req
-	var filters = attrs.filters
+	var {filters} = attrs
 	var country = filters.country
+	var publishedSince = filters["published-since"]
+	var publishedUntil = filters["published-until"]
 	var bidderCount = filters["bidder-count"]
 	var contractCount = filters["contract-count"]
 	var biddingDuration = filters["bidding-duration"]
@@ -122,7 +128,7 @@ function FiltersView(attrs) {
 		>
 			<ul>
 				<li class="filter">
-					<label>Buyer Country</label>
+					<label>Country</label>
 
 					<select name="country">
 						<option value="" selected={!country || !country[1]}>All</option>
@@ -135,6 +141,28 @@ function FiltersView(attrs) {
 						</option>)}
 					</select>
 				</li>
+
+				<li class="filter">
+					<label>Publishing Date</label>
+
+					<input
+						name="published-since"
+						type="date"
+						pattern="\d\d\d\d-\d\d-\d\d"
+						value={publishedSince && publishedSince[1]}
+					/>
+
+					{" until "}
+
+					<input
+						name="published-until"
+						type="date"
+						pattern="\d\d\d\d-\d\d-\d\d"
+						value={publishedUntil && publishedUntil[1]}
+					/>
+				</li>
+
+				<br />
 
 				<li class="filter">
 					<label>Bidding Duration</label>
@@ -544,14 +572,29 @@ function FilterDescriptionElement(attrs) {
 	var {order} = attrs
 	if (_.isEmpty(filters)) return null
 
-	var originCriteria
-	var criteria = []
+	var generalCriteria = []
+	var attributeCriteria = []
 
 	var country = filters.country
-	if (country) originCriteria = <strong>{COUNTRIES[country[1]].name}</strong>
+	if (country) generalCriteria.push(_.intercalate([
+		"from",
+		<strong>{COUNTRIES[country[1]].name}</strong>
+	], " "))
+
+	var publishedSince = filters["published-since"]
+	if (publishedSince) generalCriteria.push(_.intercalate([
+		"from",
+		<strong><DateElement at={new Date(publishedSince[1])} /></strong>
+	], " "))
+
+	var publishedUntil = filters["published-until"]
+	if (publishedUntil) generalCriteria.push(_.intercalate([
+		"until",
+		<strong><DateElement at={new Date(publishedUntil[1])} /></strong>
+	], " "))
 
 	var procedureType = filters["procedure-type"]
-	if (procedureType) criteria.push(_.intercalate([
+	if (procedureType) attributeCriteria.push(_.intercalate([
 		"the",
 		<strong>{PROCEDURE_TYPES[procedureType[1]]}</strong>,
 		"process",
@@ -561,7 +604,7 @@ function FilterDescriptionElement(attrs) {
 	if (biddingDuration) {
 		var days = Number(biddingDuration[1].replace(/d$/, ""))
 
-		criteria.push(_.intercalate([
+		attributeCriteria.push(_.intercalate([
 			<strong>bidding duration</strong>,
 			COMPARATORS[biddingDuration[0]],
 			<strong>{days} {_.plural(days, "day", "days")}</strong>
@@ -572,7 +615,7 @@ function FilterDescriptionElement(attrs) {
 	if (bidderCount) {
 		let count = Number(bidderCount[1])
 
-		criteria.push(_.intercalate([
+		attributeCriteria.push(_.intercalate([
 			COMPARATORS[bidderCount[0]],
 			<strong>{count} {_.plural(count, "bidder", "bidders")}</strong>
 		], " "))
@@ -582,7 +625,7 @@ function FilterDescriptionElement(attrs) {
 	if (contractCount) {
 		let count = Number(contractCount[1])
 
-		criteria.push(_.intercalate([
+		attributeCriteria.push(_.intercalate([
 			COMPARATORS[contractCount[0]],
 			<strong>{count} {_.plural(count, "contract", "contracts")}</strong>
 		], " "))
@@ -592,7 +635,7 @@ function FilterDescriptionElement(attrs) {
 	if (politicalPartyDonations) {
 		let months = Number(politicalPartyDonations[1])
 
-		criteria.push(_.intercalate([
+		attributeCriteria.push(_.intercalate([
 			<strong>political party donations</strong>,
 			COMPARATORS[politicalPartyDonations[0]],
 			<strong>{months} {_.plural(months, "month", "months")} before</strong>
@@ -600,14 +643,24 @@ function FilterDescriptionElement(attrs) {
 	}
 
 	return <p class="filter-description">
-		Procurements{originCriteria ? [
-			" from ", originCriteria
-		] : null}{criteria.length > 0 ? [" with ", criteria.length > 1
-			? [_.intercalate(criteria.slice(0, -1), ", "), " and ", _.last(criteria)]
-			: criteria
-		] : null}{order ? <Fragment>
+		Procurements
+
+		{generalCriteria.length > 0 ? [
+			" ",
+			_.intercalate(generalCriteria, " ")
+		] : null}
+
+		{attributeCriteria.length > 0 ? [
+			" with ", attributeCriteria.length > 1 ? [
+				_.intercalate(attributeCriteria.slice(0, -1), ", "),
+				" and ",
+				_.last(attributeCriteria)
+			] : attributeCriteria
+		] : null}
+
+		{order ? <Fragment>
 			{" "}sorted by <strong>{ORDER_NAMES[order[0]]}</strong>
-		</Fragment> : null}.
+		</Fragment> : null}
 	</p>
 }
 
