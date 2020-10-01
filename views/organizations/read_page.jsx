@@ -40,7 +40,7 @@ function ReadPage(attrs) {
 		person.roles.some((role) => !role.ended_at
 	)))
 
-	return <Page page="organization" req={attrs.req} title={organization.title}>
+	return <Page page="organization" req={attrs.req} title={organization.name}>
 		<Header>
 			<h1>{organization.name}</h1>
 
