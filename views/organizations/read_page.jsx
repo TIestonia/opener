@@ -101,6 +101,10 @@ function ReadPage(attrs) {
 		{procurements.length > 0 ? <Section id="procurements-section">
 			<Heading>Procurements</Heading>
 
+			<p>
+				Procurements the organization has published as a buyer.
+			</p>
+
 			<ProcurementList
 				procurements={procurements}
 				showBuyer={false}
@@ -109,6 +113,10 @@ function ReadPage(attrs) {
 
 		{procurementsWon.length > 0 ? <Section id="contracts-section">
 			<Heading>Contracts</Heading>
+
+			<p>
+				Procurements the organization has bid on or participated in as a seller.
+			</p>
 
 			<ProcurementList
 				procurements={procurementsWon}
