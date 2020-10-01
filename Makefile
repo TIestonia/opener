@@ -39,7 +39,7 @@ LFTP_MIRROR_OPTS = \
 	--parallel=4 \
 	--delete \
 	--exclude (^\|/)\. \
-	--exclude ^app\.js$ \
+	--exclude ^app\.js$$ \
 	--exclude ^config/development\.json$$ \
 	--exclude ^config/production\.json$$ \
 	--exclude ^config/[^.]+\.sqlite3$$ \
