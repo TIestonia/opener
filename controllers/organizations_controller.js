@@ -9,10 +9,18 @@ var contractsDb = require("root/db/procurement_contracts_db")
 var sql = require("sqlate")
 var next = require("co-next")
 var ID_PATH = "/:country([A-Z][A-Z])::id"
-
+var {parseOrder} = require("./procurements_controller")
 exports.router = Router({mergeParams: true})
 
-exports.router.get("/", next(function*(_req, res) {
+var ORDER_COLUMNS = {
+	name: sql`org.name`,
+	"procurements-cost": sql`procurements_cost`,
+	"contracts-cost": sql`contracts_cost`
+}
+
+exports.router.get("/", next(function*(req, res) {
+	var order = req.query.order ? parseOrder(req.query.order) : ["name", "asc"]
+
 	var organizations = yield organizationsDb.search(sql`
 		SELECT
 			org.country,
@@ -38,10 +46,17 @@ exports.router.get("/", next(function*(_req, res) {
 		AND contract.seller_id = org.id
 
 		GROUP BY org.country, org.id
-		ORDER BY org.name
+
+		${order ? sql`
+			ORDER BY ${ORDER_COLUMNS[order[0]]}
+			${order[1] == "asc" ? sql`ASC` : sql`DESC`}
+		`: sql``}
 	`)
 
-	res.render("organizations/index_page.jsx", {organizations: organizations})
+	res.render("organizations/index_page.jsx", {
+		organizations,
+		order
+	})
 }))
 
 exports.router.use(ID_PATH, next(function*(req, _res, next) {

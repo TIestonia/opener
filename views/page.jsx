@@ -1,5 +1,6 @@
 /** @jsx Jsx */
 var _ = require("root/lib/underscore")
+var Qs = require("qs")
 var Jsx = require("j6pack")
 var LIVERELOAD_PORT = process.env.LIVERELOAD_PORT || 35729
 var ENV = process.env.ENV
@@ -14,6 +15,7 @@ exports.DateElement = DateElement
 exports.TimeElement = TimeElement
 exports.MoneyElement = MoneyElement
 exports.FlagElement = FlagElement
+exports.SortButton = SortButton
 
 function Page(attrs, children) {
 	var req = attrs.req
@@ -89,6 +91,22 @@ function Table(attrs, children) {
 	return <div class="opener-table-wrapper">
 		<table {...attrs}>{children}</table>
 	</div>
+}
+
+function SortButton(attrs, children) {
+	var {name} = attrs
+	var {sorted} = attrs
+	var defaultDirection = attrs.direction || "asc"
+	var direction = !sorted ? defaultDirection : sorted == "asc" ? "desc" : "asc"
+
+	var {path} = attrs
+	var {query} = attrs
+	query = _.assign({}, query, {order: (direction == "asc" ? "" : "-") + name})
+	var url = path + "?" + Qs.stringify(query)
+
+	return <a href={url} class={"column-name sort-button " + (sorted || "")}>
+		{children}
+	</a>
 }
 
 function TimeElement(attrs) {

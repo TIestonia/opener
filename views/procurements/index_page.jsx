@@ -12,6 +12,7 @@ var {Table} = Page
 var {DateElement} = Page
 var {MoneyElement} = Page
 var {FlagElement} = Page
+var {SortButton} = Page
 var {javascript} = require("root/lib/jsx")
 var diffInDays = require("date-fns").differenceInCalendarDays
 var {PROCEDURE_TYPES} = require("root/lib/procurement")
@@ -687,22 +688,6 @@ function FilterDescriptionElement(attrs) {
 			{" "}sorted by <strong>{ORDER_NAMES[order[0]]}</strong>
 		</Fragment> : null}
 	</p>
-}
-
-function SortButton(attrs, children) {
-	var {name} = attrs
-	var {sorted} = attrs
-	var defaultDirection = attrs.direction || "asc"
-	var direction = !sorted ? defaultDirection : sorted == "asc" ? "desc" : "asc"
-
-	var {path} = attrs
-	var {query} = attrs
-	query = _.assign({}, query, {order: (direction == "asc" ? "" : "-") + name})
-	var url = path + "?" + Qs.stringify(query)
-
-	return <a href={url} class={"column-name sort-button " + (sorted || "")}>
-		{children}
-	</a>
 }
 
 function Pagination(attrs) {

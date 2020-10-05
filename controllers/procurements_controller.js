@@ -10,6 +10,7 @@ var peopleDb = require("root/db/organization_people_db")
 var sql = require("sqlate")
 var next = require("co-next")
 var ID_PATH = "/:country([A-Z][A-Z])::id"
+exports.parseOrder = parseOrder
 exports.router = Router({mergeParams: true})
 
 var COMPARATORS = {

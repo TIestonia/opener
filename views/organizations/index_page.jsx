@@ -9,10 +9,16 @@ var {Section} = Page
 var {Table} = Page
 var {MoneyElement} = Page
 var {FlagElement} = Page
+var {SortButton} = Page
 var COUNTRIES = require("root/lib/countries")
 
 module.exports = function(attrs) {
+	var req = attrs.req
 	var organizations = attrs.organizations
+	var path = req.baseUrl
+	var {order} = attrs
+	var orderName = order && order[0]
+	var orderDirection = order && order[1]
 
 	return <Page
 		page="organizations"
@@ -26,9 +32,35 @@ module.exports = function(attrs) {
 		<Section>
 			<Table id="organizations">
 				<thead>
-					<th><span class="column-name">Name</span></th>
-					<th><span class="column-name">Procurements</span></th>
-					<th><span class="column-name">Contracts</span></th>
+					<th>
+						<SortButton
+							path={path}
+							name="name"
+							sorted={orderName == "name" ? orderDirection : null}
+						>
+							Name
+						</SortButton>
+					</th>
+
+					<th>
+						<SortButton
+							path={path}
+							name="procurements-cost"
+							sorted={orderName == "procurements-cost" ? orderDirection : null}
+						>
+							Procurements
+						</SortButton>
+					</th>
+
+					<th>
+						<SortButton
+							path={path}
+							name="contracts-cost"
+							sorted={orderName == "contracts-cost" ? orderDirection : null}
+						>
+							Contracts
+						</SortButton>
+					</th>
 				</thead>
 
 				<tbody>{organizations.map(function(org) {
