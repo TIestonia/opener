@@ -27,6 +27,7 @@ var FILTERS = [
 	"bidder-count",
 	"contract-count",
 	"bidding-duration",
+	"cost",
 	"procedure-type",
 	"political-party-donations"
 ]
@@ -49,6 +50,7 @@ exports.router.get("/", next(function*(req, res) {
 	var contractCount = filters["contract-count"]
 	var biddingDuration = filters["bidding-duration"]
 	var procedureType = filters["procedure-type"]
+	var cost = filters.cost
 	var politicalPartyDonations = filters["political-party-donations"]
 	var order = req.query.order ? parseOrder(req.query.order) : null
 	var limit = req.query.limit ? Number(req.query.limit) : 1000
@@ -157,6 +159,11 @@ exports.router.get("/", next(function*(req, res) {
 		${biddingDuration ? sql`
 			AND bidding_duration ${COMPARATORS[biddingDuration[0]]}
 			${Number(biddingDuration[1].replace(/d$/, ""))}`
+		: sql``}
+
+		${cost ? sql`
+			AND procurement.cost ${COMPARATORS[cost[0]]}
+			${Number(cost[1])}`
 		: sql``}
 
 		${politicalPartyDonations ? sql`

@@ -110,6 +110,7 @@ function FiltersView(attrs) {
 	var bidderCount = filters["bidder-count"]
 	var contractCount = filters["contract-count"]
 	var biddingDuration = filters["bidding-duration"]
+	var cost = filters.cost
 	var procedureType = filters["procedure-type"]
 	var politicalPartyDonations = filters["political-party-donations"]
 
@@ -225,6 +226,23 @@ function FiltersView(attrs) {
 						disabled={!contractCount}
 						value={contractCount && contractCount[1]}
 					/>
+				</li>
+
+				<li class="filter">
+					<label>Cost</label>
+
+					<ComparisonSelectInput
+						value={cost && cost[0]}
+					/>
+
+					<input
+						class="cost-input"
+						name={"cost" + suffixComparator(cost)}
+						type="number"
+						min="0"
+						disabled={!cost}
+						value={cost && cost[1]}
+					/> euros
 				</li>
 
 				<li class="filter">
@@ -610,6 +628,13 @@ function FilterDescriptionElement(attrs) {
 			<strong>{days} {_.plural(days, "day", "days")}</strong>
 		], " "))
 	}
+
+	var cost = filters.cost
+	if (cost) attributeCriteria.push(_.intercalate([
+		<strong>cost</strong>,
+		COMPARATORS[cost[0]],
+		<MoneyElement currency="EUR" amount={Number(cost[1])} />
+	], " "))
 
 	var bidderCount = filters["bidder-count"]
 	if (bidderCount) {
