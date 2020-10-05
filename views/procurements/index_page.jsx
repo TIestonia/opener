@@ -13,22 +13,16 @@ var {DateElement} = Page
 var {MoneyElement} = Page
 var {FlagElement} = Page
 var {SortButton} = Page
-var {javascript} = require("root/lib/jsx")
+var {FiltersView} = Page
+var {serializeFiltersQuery} = require("root/lib/filtering")
+var {suffixComparator} = require("root/lib/filtering")
 var diffInDays = require("date-fns").differenceInCalendarDays
 var {PROCEDURE_TYPES} = require("root/lib/procurement")
 var COUNTRIES = require("root/lib/countries")
 var ROLES = require("root/lib/procurement").ORGANIZATION_ROLES
-var SUPPORTED_COUNTRIES = ["EE", "LV"]
+var SUPPORTED_COUNTRIES = require("root/config").countries
 exports = module.exports = IndexPage
 exports.ProcurementList = ProcurementList
-
-var COMPARATOR_SUFFIXES = {
-	"=": "",
-	"<": "<<",
-	"<=": "<",
-	">=": ">",
-	">": ">>"
-}
 
 var ORDER_NAMES = {
 	title: "title",
@@ -77,7 +71,7 @@ function IndexPage(attrs) {
 				<FilterDescriptionElement filters={filters} order={order} />
 			: null}
 
-			<FiltersView
+			<ProcurementFiltersView
 				req={req}
 				filters={filters}
 				order={order}
@@ -102,7 +96,7 @@ function IndexPage(attrs) {
 	</Page>
 }
 
-function FiltersView(attrs) {
+function ProcurementFiltersView(attrs) {
 	var req = attrs.req
 	var {filters} = attrs
 	var country = filters.country
@@ -119,187 +113,153 @@ function FiltersView(attrs) {
 	var orderName = order && order[0]
 	var orderDirection = order && order[1]
 
-	return <div id="filters">
-		<input id="filters-toggle" type="checkbox" hidden />
-		<label for="filters-toggle" class="link-button">Show filters</label>
+	return <FiltersView action={req.baseUrl}>
+		<ul>
+			<li class="filter">
+				<label>Country</label>
 
-		<form
-			id="filter-form"
-			action={req.baseUrl}
-			method="get"
-		>
-			<ul>
-				<li class="filter">
-					<label>Country</label>
+				<select name="country">
+					<option value="" selected={!country || !country[1]}>All</option>
 
-					<select name="country">
-						<option value="" selected={!country || !country[1]}>All</option>
+					{SUPPORTED_COUNTRIES.map((id) => <option
+						value={id}
+						selected={country && country[1] == id}
+					>
+						{COUNTRIES[id].name}
+					</option>)}
+				</select>
+			</li>
 
-						{SUPPORTED_COUNTRIES.map((id) => <option
-							value={id}
-							selected={country && country[1] == id}
-						>
-							{COUNTRIES[id].name}
-						</option>)}
-					</select>
-				</li>
+			<li class="filter">
+				<label>Publishing Date</label>
 
-				<li class="filter">
-					<label>Publishing Date</label>
+				<input
+					name="published-since"
+					type="date"
+					pattern="\d\d\d\d-\d\d-\d\d"
+					value={publishedSince && publishedSince[1]}
+				/>
 
-					<input
-						name="published-since"
-						type="date"
-						pattern="\d\d\d\d-\d\d-\d\d"
-						value={publishedSince && publishedSince[1]}
-					/>
+				{" until "}
 
-					{" until "}
+				<input
+					name="published-until"
+					type="date"
+					pattern="\d\d\d\d-\d\d-\d\d"
+					value={publishedUntil && publishedUntil[1]}
+				/>
+			</li>
 
-					<input
-						name="published-until"
-						type="date"
-						pattern="\d\d\d\d-\d\d-\d\d"
-						value={publishedUntil && publishedUntil[1]}
-					/>
-				</li>
+			<br />
 
-				<br />
+			<li class="filter">
+				<label>Bidding Duration</label>
 
-				<li class="filter">
-					<label>Bidding Duration</label>
+				<ComparisonSelectInput
+					value={biddingDuration && biddingDuration[0]}
+				/>
 
-					<ComparisonSelectInput
-						value={biddingDuration && biddingDuration[0]}
-					/>
+				<input
+					name={"bidding-duration" + suffixComparator(biddingDuration)}
+					type="number"
+					min="0"
+					disabled={!biddingDuration}
+					value={biddingDuration && biddingDuration[1].replace(/d$/, "")}
+				/> days
+			</li>
 
-					<input
-						name={"bidding-duration" + suffixComparator(biddingDuration)}
-						type="number"
-						min="0"
-						disabled={!biddingDuration}
-						value={biddingDuration && biddingDuration[1].replace(/d$/, "")}
-					/> days
-				</li>
+			<li class="filter">
+				<label>Bidder Count</label>
 
-				<li class="filter">
-					<label>Bidder Count</label>
+				<ComparisonSelectInput
+					value={bidderCount && bidderCount[0]}
+				/>
 
-					<ComparisonSelectInput
-						value={bidderCount && bidderCount[0]}
-					/>
+				<input
+					name={"bidder-count" + suffixComparator(bidderCount)}
+					type="number"
+					min="0"
+					disabled={!bidderCount}
+					value={bidderCount && bidderCount[1]}
+				/>
+			</li>
 
-					<input
-						name={"bidder-count" + suffixComparator(bidderCount)}
-						type="number"
-						min="0"
-						disabled={!bidderCount}
-						value={bidderCount && bidderCount[1]}
-					/>
-				</li>
+			<li class="filter">
+				<label>Procedure</label>
 
-				<li class="filter">
-					<label>Procedure</label>
+				<select name="procedure-type">
+					<option value="" selected={!procedureType}>All</option>
 
-					<select name="procedure-type">
-						<option value="" selected={!procedureType}>All</option>
+					{_.map(PROCEDURE_TYPES, (title, type) => <option
+						value={type}
+						selected={procedureType && procedureType[1] == type}
+					>
+						{title}
+					</option>)}
+				</select>
+			</li>
 
-						{_.map(PROCEDURE_TYPES, (title, type) => <option
-							value={type}
-							selected={procedureType && procedureType[1] == type}
-						>
-							{title}
-						</option>)}
-					</select>
-				</li>
+			<li class="filter">
+				<label>Contract Count</label>
 
-				<li class="filter">
-					<label>Contract Count</label>
+				<ComparisonSelectInput
+					value={contractCount && contractCount[0]}
+				/>
 
-					<ComparisonSelectInput
-						value={contractCount && contractCount[0]}
-					/>
+				<input
+					name={"contract-count" + suffixComparator(contractCount)}
+					type="number"
+					min="0"
+					disabled={!contractCount}
+					value={contractCount && contractCount[1]}
+				/>
+			</li>
 
-					<input
-						name={"contract-count" + suffixComparator(contractCount)}
-						type="number"
-						min="0"
-						disabled={!contractCount}
-						value={contractCount && contractCount[1]}
-					/>
-				</li>
+			<li class="filter">
+				<label>Cost</label>
 
-				<li class="filter">
-					<label>Cost</label>
+				<ComparisonSelectInput
+					value={cost && cost[0]}
+				/>
 
-					<ComparisonSelectInput
-						value={cost && cost[0]}
-					/>
+				<input
+					class="cost-input"
+					name={"cost" + suffixComparator(cost)}
+					type="number"
+					min="0"
+					disabled={!cost}
+					value={cost && cost[1]}
+				/> euros
+			</li>
 
-					<input
-						class="cost-input"
-						name={"cost" + suffixComparator(cost)}
-						type="number"
-						min="0"
-						disabled={!cost}
-						value={cost && cost[1]}
-					/> euros
-				</li>
+			<li class="filter">
+				<label>Possibly Related Political Donations</label>
 
-				<li class="filter">
-					<label>Possibly Related Political Donations</label>
+				<ComparisonSelectInput
+					value={politicalPartyDonations && politicalPartyDonations[0]}
+				/>
 
-					<ComparisonSelectInput
-						value={politicalPartyDonations && politicalPartyDonations[0]}
-					/>
-
-					<input
-						name={
-							"political-party-donations" +
-							suffixComparator(politicalPartyDonations)
-						}
-						type="number"
-						min="0"
-						disabled={!politicalPartyDonations}
-						value={politicalPartyDonations && politicalPartyDonations[1]}
-					/> months before
-				</li>
-			</ul>
-
-			{order ? <input
-				type="hidden"
-				name="order"
-				value={(orderDirection == "asc" ? "" : "-") + orderName}
-			/> : null}
-
-			<button type="submit">Filter Procurements</button>
-
-			<script>{javascript`(function() {
-				var forEach = Function.call.bind(Array.prototype.forEach)
-				var selects = document.getElementsByClassName("comparison-select")
-				var COMPARATOR_SUFFIXES = ${COMPARATOR_SUFFIXES}
-
-				forEach(selects, function(select) {
-					select.addEventListener("change", handleChange)
-				})
-
-				function handleChange(ev) {
-					var select = ev.target
-					var comparator = select.value
-
-					var input = select.nextElementSibling
-					input.name = input.name.replace(/[<>]+$/, "")
-					input.disabled = !comparator
-
-					if (comparator) {
-						input.name += COMPARATOR_SUFFIXES[comparator]
-						input.focus()
+				<input
+					name={
+						"political-party-donations" +
+						suffixComparator(politicalPartyDonations)
 					}
-					else input.value = ""
-				}
-			})()`}</script>
-		</form>
-	</div>
+					type="number"
+					min="0"
+					disabled={!politicalPartyDonations}
+					value={politicalPartyDonations && politicalPartyDonations[1]}
+				/> months before
+			</li>
+		</ul>
+
+		{order ? <input
+			type="hidden"
+			name="order"
+			value={(orderDirection == "asc" ? "" : "-") + orderName}
+		/> : null}
+
+		<button type="submit">Filter Procurements</button>
+	</FiltersView>
 }
 
 function ComparisonSelectInput(attrs) {
@@ -713,15 +673,4 @@ function Pagination(attrs) {
 			</li>
 		})}
 	</ol>
-}
-
-function serializeFiltersQuery(filters) {
-	return _.mapValues(
-		_.mapKeys(filters, (name, filter) => name + suffixComparator(filter)),
-		_.second
-	)
-}
-
-function suffixComparator(filter) {
-	return filter ? COMPARATOR_SUFFIXES[filter[0]] : ""
 }

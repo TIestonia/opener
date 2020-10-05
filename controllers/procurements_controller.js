@@ -9,17 +9,11 @@ var donationsDb = require("root/db/political_party_donations_db")
 var peopleDb = require("root/db/organization_people_db")
 var sql = require("sqlate")
 var next = require("co-next")
+var {parseFilters} = require("root/lib/filtering")
+var {parseOrder} = require("root/lib/filtering")
 var ID_PATH = "/:country([A-Z][A-Z])::id"
-exports.parseOrder = parseOrder
+var COMPARATORS = require("root/lib/filtering").COMPARATOR_SQL
 exports.router = Router({mergeParams: true})
-
-var COMPARATORS = {
-	"<": sql`<`,
-	"<=": sql`<=`,
-	"=": sql`=`,
-	">=": sql`>=`,
-	">": sql`>`
-}
 
 var FILTERS = [
 	"country",
@@ -43,7 +37,7 @@ var ORDER_COLUMNS = {
 }
 
 exports.router.get("/", next(function*(req, res) {
-	var filters = parseFilters(req.query)
+	var filters = parseFilters(FILTERS, req.query)
 	var country = filters.country
 	var publishedSince = filters["published-since"]
 	var publishedUntil = filters["published-until"]
@@ -419,31 +413,3 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 		sellers
 	})
 }))
-
-function parseFilters(query) {
-	var filters = {}, name, value
-
-	for (var filter in query) {
-		if (filter.includes("<")) {
-			[name, value] = filter.split("<")
-			if (filter.endsWith("<<")) filters[name] = ["<", query[filter]]
-			else if (query[filter]) filters[name] = ["<=", query[filter]]
-			else if (value) filters[name] = ["<", value]
-		}
-		else if (filter.includes(">")) {
-			[name, value] = filter.split(">")
-			if (filter.endsWith(">>")) filters[name] = [">", query[filter]]
-			else if (query[filter]) filters[name] = [">=", query[filter]]
-			else if (value) filters[name] = [">", value]
-		}
-		else if (query[filter]) filters[filter] = ["=", query[filter]]
-	}
-
-	return _.filterValues(filters, (_v, name) => FILTERS.includes(name))
-}
-
-function parseOrder(query) {
-	var direction = query[0] == "-" ? "desc" : "asc"
-	var field = query.replace(/^[-+]/, "")
-	return [field, direction]
-}

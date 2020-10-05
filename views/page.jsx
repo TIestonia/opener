@@ -5,6 +5,8 @@ var Jsx = require("j6pack")
 var LIVERELOAD_PORT = process.env.LIVERELOAD_PORT || 35729
 var ENV = process.env.ENV
 var COUNTRIES = require("root/lib/countries")
+var {javascript} = require("root/lib/jsx")
+var {COMPARATOR_SUFFIXES} = require("root/lib/filtering")
 exports = module.exports = Page
 exports.Header = Header
 exports.Section = Section
@@ -16,6 +18,7 @@ exports.TimeElement = TimeElement
 exports.MoneyElement = MoneyElement
 exports.FlagElement = FlagElement
 exports.SortButton = SortButton
+exports.FiltersView = FiltersView
 
 function Page(attrs, children) {
 	var req = attrs.req
@@ -132,6 +135,48 @@ function MoneyElement(attrs) {
 	return <span class="opener-money" title={_.formatPrice(currency, amount)}>
 		{major}{cents ? <sup>.{cents}</sup> : null}
 	</span>
+}
+
+function FiltersView(attrs, children) {
+	var {action} = attrs
+
+	return <div id="filters" class="opener-filters">
+		<input id="filters-toggle" type="checkbox" hidden />
+		<label for="filters-toggle" class="link-button">Show filters</label>
+
+		<form
+			id="filter-form"
+			action={action}
+			method="get"
+		>
+			{children}
+
+			<script>{javascript`(function() {
+				var forEach = Function.call.bind(Array.prototype.forEach)
+				var selects = document.getElementsByClassName("comparison-select")
+				var COMPARATOR_SUFFIXES = ${COMPARATOR_SUFFIXES}
+
+				forEach(selects, function(select) {
+					select.addEventListener("change", handleChange)
+				})
+
+				function handleChange(ev) {
+					var select = ev.target
+					var comparator = select.value
+
+					var input = select.nextElementSibling
+					input.name = input.name.replace(/[<>]+$/, "")
+					input.disabled = !comparator
+
+					if (comparator) {
+						input.name += COMPARATOR_SUFFIXES[comparator]
+						input.focus()
+					}
+					else input.value = ""
+				}
+			})()`}</script>
+		</form>
+	</div>
 }
 
 function LiveReload(attrs) {

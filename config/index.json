@@ -1,5 +1,6 @@
 {
 	"cookieSecret": null,
+	"countries": ["EE", "LV"],
 	"estonianBusinessRegisterUser": null,
 	"estonianBusinessRegisterPassword": null,
 	"latvianBusinessRegisterClientId": null,

@@ -9,8 +9,14 @@ var contractsDb = require("root/db/procurement_contracts_db")
 var sql = require("sqlate")
 var next = require("co-next")
 var ID_PATH = "/:country([A-Z][A-Z])::id"
-var {parseOrder} = require("./procurements_controller")
+var {parseFilters} = require("root/lib/filtering")
+var {parseOrder} = require("root/lib/filtering")
+var sqlite = require("root").sqlite
 exports.router = Router({mergeParams: true})
+
+var FILTERS = [
+	"country"
+]
 
 var ORDER_COLUMNS = {
 	name: sql`org.name`,
@@ -19,7 +25,13 @@ var ORDER_COLUMNS = {
 }
 
 exports.router.get("/", next(function*(req, res) {
+	var filters = parseFilters(FILTERS, req.query)
+	var country = filters.country
 	var order = req.query.order ? parseOrder(req.query.order) : ["name", "asc"]
+	
+	var organizationsCountries = _.map(yield sqlite(sql`
+		SELECT DISTINCT country FROM organizations
+	`), "country")
 
 	var organizations = yield organizationsDb.search(sql`
 		SELECT
@@ -45,6 +57,12 @@ exports.router.get("/", next(function*(req, res) {
 		ON contract.seller_country = org.country
 		AND contract.seller_id = org.id
 
+		WHERE 1 = 1
+
+		${country && country[1] ? sql`
+			AND org.country = ${country[1]}
+		`: sql``}
+
 		GROUP BY org.country, org.id
 
 		${order ? sql`
@@ -54,7 +72,9 @@ exports.router.get("/", next(function*(req, res) {
 	`)
 
 	res.render("organizations/index_page.jsx", {
+		organizationsCountries,
 		organizations,
+		filters,
 		order
 	})
 }))

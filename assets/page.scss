@@ -218,6 +218,61 @@ section.centered {
 	box-shadow: 0 1px rgba(black, .2);
 }
 
+.opener-filters {
+	#filters-toggle:checked + label,
+	#filters-toggle:not(:checked) ~ form { display: none; }
+
+	form {
+		margin-top: 1rem;
+		background: white;
+		padding: 2rem;
+		margin-left: -2rem;
+		margin-right: -2rem;
+	}
+
+	.filter {
+		display: inline-block;
+		margin-right: 2rem;
+		margin-bottom: 1rem;
+
+		label {
+			font-weight: 600;
+			display: block;
+			margin-bottom: 0.3rem;
+		}
+
+		select {
+			height: 3rem;
+		}
+
+		input {
+			height: 3rem;
+			padding: 0 1rem;
+
+			-webkit-appearance: none;
+			-moz-appearance: none;
+			appearance: none;
+
+			border: 1px solid #ccc;
+			border-radius: 0.5rem;
+		}
+
+		select + input {
+			margin-left: 0.5rem;
+		}
+
+		input[type=number] {
+			-moz-appearance: textfield;
+			width: 7rem;
+			text-align: right;
+		}
+	}
+
+	button[type=submit] {
+		@extend .blue-button;
+	}
+}
+
 #nav {
 	line-height: 2.4rem;
 	color: black;
@@ -314,54 +369,7 @@ section.centered {
 	}
 
 	#filters {
-		#filters-toggle:checked + label,
-		#filters-toggle:not(:checked) ~ form { display: none; }
-
-		form {
-			margin-top: 1rem;
-			background: white;
-			padding: 2rem;
-			margin-left: -2rem;
-			margin-right: -2rem;
-		}
-
 		.filter {
-			display: inline-block;
-			margin-right: 2rem;
-			margin-bottom: 1rem;
-
-			label {
-				font-weight: 600;
-				display: block;
-				margin-bottom: 0.3rem;
-			}
-
-			select {
-				height: 3rem;
-			}
-
-			input {
-				height: 3rem;
-				padding: 0 1rem;
-
-				-webkit-appearance: none;
-				-moz-appearance: none;
-				appearance: none;
-
-				border: 1px solid #ccc;
-				border-radius: 0.5rem;
-			}
-
-			select + input {
-				margin-left: 0.5rem;
-			}
-
-			input[type=number] {
-				-moz-appearance: textfield;
-				width: 7rem;
-				text-align: right;
-			}
-
 			.cost-input {
 				min-width: 10rem;
 			}
@@ -369,10 +377,6 @@ section.centered {
 			select[name=procedure-type] {
 				max-width: 20rem;
 			}
-		}
-
-		button[type=submit] {
-			@extend .blue-button;
 		}
 	}
 
@@ -644,7 +648,35 @@ section.centered {
 }
 
 #organizations-page main {
+	.intro-text {
+		line-height: 1.7;
+
+		.example-filter-link {
+			border-radius: 5rem;
+			font-size: 1.4rem;
+			padding: 0 1rem;
+			background-color: $ti-blue;
+			color: white;
+			display: inline-block;
+		}
+	}
+
+	#organizations-section {
+		.filter-description {
+			line-height: 1.5;
+		}
+	}
+
+	#filters {
+		.filter {
+			select[name=country] {
+				max-width: 20rem;
+			}
+		}
+	}
+
 	#organizations {
+		margin-top: 2rem;
 		@extend .opener-table;
 
 		.organization {

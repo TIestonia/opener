@@ -6,19 +6,34 @@ var Page = require("../page")
 var Paths = require("root/lib/paths")
 var {Header} = Page
 var {Section} = Page
+var {Heading} = Page
 var {Table} = Page
 var {MoneyElement} = Page
 var {FlagElement} = Page
 var {SortButton} = Page
+var {FiltersView} = Page
+var {serializeFiltersQuery} = require("root/lib/filtering")
 var COUNTRIES = require("root/lib/countries")
+var SUPPORTED_COUNTRIES = require("root/config").countries
+
+var ORDER_NAMES = {
+	name: "name",
+	"procurements-cost": "procurements cost",
+	"contracts-cost": "contracts cost"
+}
 
 module.exports = function(attrs) {
 	var req = attrs.req
-	var organizations = attrs.organizations
-	var path = req.baseUrl
+	var {organizations} = attrs
+	var {organizationsCountries} = attrs
+	var {filters} = attrs
 	var {order} = attrs
 	var orderName = order && order[0]
 	var orderDirection = order && order[1]
+
+	var path = req.baseUrl
+	var query = serializeFiltersQuery(filters)
+	if (order) query.order = (order[1] == "asc" ? "" : "-") + order[0]
 
 	return <Page
 		page="organizations"
@@ -30,11 +45,35 @@ module.exports = function(attrs) {
 		</Header>
 
 		<Section>
+			<p class="intro-text">
+				Here's a list of all organizations that have either published procurements or won contracts. You can view organizations only from <a href={path + "?country=EE"} class="example-filter-link">Estonia</a> or <a href={path + "?country=LV"} class="example-filter-link">Latvia</a>, or create your own filter below.
+			</p>
+		</Section>
+
+		<Section id="organizations-section">
+			<Heading>
+				Found {organizations.length}
+				{" "}
+				{_.plural(organizations.length, "organization", "organizations")}
+			</Heading>
+
+			{!_.isEmpty(filters) ?
+				<FilterDescriptionElement filters={filters} order={order} />
+			: null}
+
+			<OrganizationFiltersView
+				req={req}
+				filters={filters}
+				order={order}
+				availableCountries={organizationsCountries}
+			/>
+
 			<Table id="organizations">
 				<thead>
 					<th>
 						<SortButton
 							path={path}
+							query={query}
 							name="name"
 							sorted={orderName == "name" ? orderDirection : null}
 						>
@@ -45,6 +84,7 @@ module.exports = function(attrs) {
 					<th>
 						<SortButton
 							path={path}
+							query={query}
 							name="procurements-cost"
 							sorted={orderName == "procurements-cost" ? orderDirection : null}
 						>
@@ -55,6 +95,7 @@ module.exports = function(attrs) {
 					<th>
 						<SortButton
 							path={path}
+							query={query}
 							name="contracts-cost"
 							sorted={orderName == "contracts-cost" ? orderDirection : null}
 						>
@@ -108,4 +149,88 @@ module.exports = function(attrs) {
 			</Table>
 		</Section>
 	</Page>
+}
+
+function OrganizationFiltersView(attrs) {
+	var req = attrs.req
+	var {filters} = attrs
+	var country = filters.country
+	var {availableCountries} = attrs
+	availableCountries = _.sortBy(availableCountries, (id) => COUNTRIES[id].name)
+
+	var {order} = attrs
+	var orderName = order && order[0]
+	var orderDirection = order && order[1]
+
+	return <FiltersView action={req.baseUrl}>
+		<ul>
+			<li class="filter">
+				<label>Country</label>
+
+				<select name="country">
+					<option value="" selected={!country || !country[1]}>All</option>
+
+					{SUPPORTED_COUNTRIES.map((id) => <option
+						value={id}
+						selected={country && country[1] == id}
+					>
+						{COUNTRIES[id].name}
+					</option>)}
+
+					<optgroup label="All Countries">
+						{availableCountries.map((id) => <option
+							value={id}
+							selected={country && country[1] == id}
+						>
+							{COUNTRIES[id].name}
+						</option>)}
+					</optgroup>
+				</select>
+			</li>
+		</ul>
+
+		{order ? <input
+			type="hidden"
+			name="order"
+			value={(orderDirection == "asc" ? "" : "-") + orderName}
+		/> : null}
+
+		<button type="submit">Filter Procurements</button>
+	</FiltersView>
+}
+
+function FilterDescriptionElement(attrs) {
+	var {filters} = attrs
+	var {order} = attrs
+	if (_.isEmpty(filters)) return null
+
+	var generalCriteria = []
+	var attributeCriteria = []
+
+	var country = filters.country
+	if (country) generalCriteria.push(_.intercalate([
+		"from",
+		<strong>{COUNTRIES[country[1]].name}</strong>
+	], " "))
+
+	return <p class="filter-description">
+		Organizations
+
+		{generalCriteria.length > 0 ? [
+			" ",
+			_.intercalate(generalCriteria, " ")
+		] : null}
+
+		{attributeCriteria.length > 0 ? [
+			" with ", attributeCriteria.length > 1 ? [
+				_.intercalate(attributeCriteria.slice(0, -1), ", "),
+				" and ",
+				_.last(attributeCriteria)
+			] : attributeCriteria
+		] : null}
+
+		{order ? <Fragment>
+			{" "}sorted by <strong>{ORDER_NAMES[order[0]]}</strong>
+		</Fragment> : null}
+	</p>
 }
