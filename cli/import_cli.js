@@ -24,8 +24,8 @@ Usage: cli import (-h | --help)
        cli import [options] procurements-ocds (<path>|-)
        cli import [options] procurements-csv (<path>|-)
        cli import [options] procurement-contracts-csv (<path>|-)
-       cli import [options] political-party-members (<path>|-)
-       cli import [options] political-party-donations <name> (<path>|-)
+       cli import [options] estonian-political-party-members (<path>|-)
+       cli import [options] estonian-political-party-donations <name> (<path>|-)
 
 Options:
     -h, --help   Display this help and exit.
@@ -47,10 +47,10 @@ module.exports = function*(argv) {
 		yield importProcurementsCsv(path)
 	else if (args["procurement-contracts-csv"])
 		yield importProcurementContracts(path)
-	else if (args["political-party-members"])
-		yield importPoliticalPartyMembers(path)
-	else if (args["political-party-donations"])
-		yield importPoliticalPartyDonations(args["<name>"], path)
+	else if (args["estonian-political-party-members"])
+		yield importEstonianPoliticalPartyMembers(path)
+	else if (args["estonian-political-party-donations"])
+		yield importEstonianPoliticalPartyDonations(args["<name>"], path)
 	else
 		process.stdout.write(USAGE_TEXT.trimLeft())
 }
@@ -347,7 +347,7 @@ function* importProcurementContracts(path) {
 	console.warn("Imported %d contracts.", i)
 }
 
-function* importPoliticalPartyMembers(path) {
+function* importEstonianPoliticalPartyMembers(path) {
 	yield sqlite(sql`BEGIN`)
 
 	var parties = {}
@@ -384,7 +384,7 @@ function* importPoliticalPartyMembers(path) {
 	yield sqlite(sql`COMMIT`)
 }
 
-function* importPoliticalPartyDonations(partyName, path) {
+function* importEstonianPoliticalPartyDonations(partyName, path) {
 	yield sqlite(sql`BEGIN`)
 
 	var party = yield partiesDb.read(sql`
