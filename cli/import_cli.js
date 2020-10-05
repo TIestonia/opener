@@ -26,6 +26,7 @@ Usage: cli import (-h | --help)
        cli import [options] procurement-contracts-csv (<path>|-)
        cli import [options] estonian-political-party-members (<path>|-)
        cli import [options] estonian-political-party-donations <name> (<path>|-)
+       cli import [options] latvian-political-party-donations (<path>|-)
 
 Options:
     -h, --help   Display this help and exit.
@@ -51,6 +52,8 @@ module.exports = function*(argv) {
 		yield importEstonianPoliticalPartyMembers(path)
 	else if (args["estonian-political-party-donations"])
 		yield importEstonianPoliticalPartyDonations(args["<name>"], path)
+	else if (args["latvian-political-party-donations"])
+		yield importLatvianPoliticalPartyDonations(path)
 	else
 		process.stdout.write(USAGE_TEXT.trimLeft())
 }
@@ -407,6 +410,67 @@ function* importEstonianPoliticalPartyDonations(partyName, path) {
 			donator_normalized_name: _.normalizeName(obj["Tasuja nimi"]),
 			donator_birthdate: _.parseEstonianDate(obj["Registry Code / Birth Date"]),
 			amount: Number(obj["Laekunud summa"].replace(" ", "")),
+			currency: "EUR"
+		})
+	}))
+
+	yield sqlite(sql`COMMIT`)
+}
+
+function* importLatvianPoliticalPartyDonations(path) {
+	yield sqlite(sql`BEGIN`)
+
+	var parties = {}
+
+	// Includes both monetary donations and property or services.
+	yield Cli.stream(Cli.readCsv(path), co.wrap(function*(obj) {
+		var partyName = obj.Partija
+		var party = parties[partyName]
+		var name = obj.Dāvinātājs
+
+		var personalId = obj["Personas Kods"]
+		if (
+			!/^\d{6}-/.test(personalId) ||
+			/^32/.test(personalId)
+		) {
+			console.warn(
+				"Ignoring non-Latvian personal id %s of %s.",
+				personalId,
+				name
+			)
+
+			return
+		}
+
+		if (party == null) {
+			party = yield partiesDb.read(sql`
+				SELECT * FROM political_parties
+				WHERE country = 'LV' AND name = ${partyName}
+			`)
+
+			if (party == null) party = yield partiesDb.create({
+				country: "LV",
+				name: partyName
+			})
+
+			parties[partyName] = party
+		}
+
+		// The donation table is currently based on birth dates, but the Latvian
+		// political party donation table only includes the first 6 digits of the
+		// personal id, without the century. Assuming all donations were made by
+		// people born in the 20th century.
+		var birthYear = 1900 + +personalId.slice(4, 6)
+		var birthMonth = +personalId.slice(2, 4)
+		var birthDate = +personalId.slice(0, 2)
+
+		yield partyDonationsDb.create({
+			party_id: party.id,
+			date: _.parseEstonianDate(obj.Datums),
+			donator_name: name,
+			donator_normalized_name: _.normalizeName(name),
+			donator_birthdate: new Date(birthYear, birthMonth - 1, birthDate),
+			amount: Number(obj.Vērtība),
 			currency: "EUR"
 		})
 	}))
