@@ -69,7 +69,10 @@ function Header(_attrs, children) {
 }
 
 function Section(attrs, children) {
-	return <section id={attrs && attrs.id} class="centered">
+	return <section
+		id={attrs && attrs.id}
+		class={"centered " + (attrs && attrs.class || "")}
+	>
 		{children}
 	</section>
 }

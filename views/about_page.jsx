@@ -12,7 +12,7 @@ module.exports = function(attrs) {
 			<h1>About</h1>
 		</Header>
 
-		<Section>
+		<Section class="text-section">
 			{Jsx.html(ABOUT_HTML)}
 		</Section>
 	</Page>

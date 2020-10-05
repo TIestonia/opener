@@ -818,3 +818,51 @@ section.centered {
 		}
 	}
 }
+
+#about-page {
+	$line: 1.5rem * 1.5;
+
+	.text-section {
+		line-height: 1.5;
+
+		h2 {
+			margin-top: $line * 2;
+
+			@extend .page-heading;
+		}
+
+		h3 {
+			margin-top: $line;
+
+			@extend .page-subheading;
+		}
+
+		p + p {
+			margin-top: $line;
+		}
+
+		a { @extend .link-button; }
+
+		ul {
+			li {
+				list-style: disc;
+				margin-left: 2rem;
+			}
+		}
+
+		ul + p,
+		p + ul {
+			margin-top: $line / 2;
+		}
+	}
+
+	.logos {
+		margin-top: $line;
+		margin-bottom: $line;
+
+		img {
+			vertical-align: middle;
+			max-width: 20rem;
+		}
+	}
+}
