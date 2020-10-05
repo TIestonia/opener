@@ -377,7 +377,7 @@ function renderGraph(procurement, buyer, contracts, sellers) {
 	))
 
 	var peopleNodes = people.map(function(person) {
-		var sex = person.country == "EE"
+		var sex = person.country == "EE" && person.personal_id
 			? _.sexFromPersonalId(person.personal_id)
 			: "male"
 
