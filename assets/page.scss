@@ -564,16 +564,27 @@ section.centered {
 		}
 	}
 
-	#graph {
-		height: 50rem;
+	#graph-section {
+		#graph {
+			height: 50rem;
 
-		.vis-network:focus { outline: none; }
+			.vis-network:focus { outline: none; }
 
-		.vis-button.vis-up,
-		.vis-button.vis-down,
-		.vis-button.vis-left,
-		.vis-button.vis-right {
-			display: none;
+			.vis-button.vis-up,
+			.vis-button.vis-down,
+			.vis-button.vis-left,
+			.vis-button.vis-right {
+				display: none;
+			}
+		}
+
+		figcaption {
+			line-height: 1.5;
+			margin: 1.5rem auto 0;
+			text-align: center;
+			color: $list-item-subtitle;
+			font-size: 1.4rem;
+			max-width: 60rem;
 		}
 	}
 

@@ -207,7 +207,13 @@ module.exports = function(attrs) {
 		</Section>
 
 		<Section id="graph-section">
-			<div id="graph" />
+			<figure>
+				<div id="graph" />
+
+				<figcaption>
+					Showing board-level people associated with the buyer and seller organizations 12 months prior up to 12 months after the procurement process. Also shown are their political affiliations and donations within the same period.
+				</figcaption>
+			</figure>
 
 			<script>{javascript`(function() {
 				var visualize = require("@opener/page").visualize
