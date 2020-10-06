@@ -17,10 +17,12 @@ var {FiltersView} = Page
 var {serializeFiltersQuery} = require("root/lib/filtering")
 var {suffixComparator} = require("root/lib/filtering")
 var diffInDays = require("date-fns").differenceInCalendarDays
+var concat = Array.prototype.concat.bind(Array.prototype)
 var {PROCEDURE_TYPES} = require("root/lib/procurement")
 var COUNTRIES = require("root/lib/countries")
 var ROLES = require("root/lib/procurement").ORGANIZATION_ROLES
 var SUPPORTED_COUNTRIES = require("root/config").countries
+var {PAGE_SIZE} = require("root/controllers/procurements_controller")
 exports = module.exports = IndexPage
 exports.ProcurementList = ProcurementList
 
@@ -97,7 +99,7 @@ function IndexPage(attrs) {
 			{procurementsTotalCount > 0 ? <Pagination
 				total={procurementsTotalCount}
 				index={offset}
-				pageSize={1000}
+				pageSize={PAGE_SIZE}
 				path={path}
 				query={query}
 			/> : null}
@@ -670,20 +672,28 @@ function Pagination(attrs) {
 	var {path} = attrs
 	var {query} = attrs
 
-	var pages = Math.ceil(total / pageSize)
+	var pages = _.times(Math.ceil(total / pageSize), _.id)
 	var currentPage = Math.floor(index / pageSize)
+	var isAtEnd = currentPage < 3 || currentPage >= pages.length - 3
+
+	var pageGroups = pages.length <= 10 ? [pages] : _.groupAdjacent(_.uniq(concat(
+		pages.slice(0, isAtEnd ? 5 : 3),
+		pages.slice(Math.max(currentPage - 2, 0), currentPage + 3),
+		pages.slice(isAtEnd ? -5 : -3)
+	).sort(_.sub)), (a, b) => a + 1 == b)
 
 	return <ol id="pagination">
-		{_.times(pages, function(page) {
+		{_.intercalate(pageGroups.map((pages) => pages.map(function(page) {
 			var url = path + "?" + Qs.stringify(_.assign({}, query, {
 				offset: page * pageSize
 			}))
 
 			var isCurrent = page == currentPage
 
-			return <li class={isCurrent ? "current" : ""}>
+			return <li class={isCurrent ? "page current" : "page"}>
 				<a href={isCurrent ? "#" : url}>{page + 1}</a>
 			</li>
-		})}
+			})
+		), <li class="middle">…</li>)}
 	</ol>
 }

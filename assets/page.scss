@@ -387,22 +387,27 @@ section.centered {
 		text-align: center;
 		
 		li {
-			background: white;
-			color: $subtitle-grey;
+			color: #303030;
 			display: inline-block;
 			margin-bottom: 1rem;
+
+			&.page {
+				background: $table-header-background;
+				border-radius: 0.3rem;
+			}
 
 			a {
 				display: inline-block;
 				padding: 1rem 1rem;
 			}
 
-			&:not(.current) {
+			&:not(.current) a {
 				@extend .hover-link-button;
 			}
 
 			&.current {
 				color: black;
+				background: white;
 				font-weight: bold;
 			}
 
