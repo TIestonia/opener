@@ -1,8 +1,8 @@
 @import "reset";
 @import "fonts";
 @import "node_modules/vis-network/styles/vis-network";
-$page-width: 100rem;
-$page-padding: 6rem;
+$page-width: 102rem;
+$page-padding: 4rem;
 $body-font: Lato, Helvetica, Arial, sans-serif;
 $ti-blue: #3695d8;
 $subtitle-grey: #878787;
@@ -341,6 +341,70 @@ section.centered {
 		font-weight: normal;
 
 		a { @extend .hover-link-button; }
+	}
+}
+
+#home-page main {
+	.tagline {
+		font-size: $heading-size;
+		color: #5A5A5A;
+		font-size: $heading-size;
+		max-width: 60rem;
+	}
+
+	.features {
+		margin-right: -2rem;
+		margin-top: 4rem;
+		display: flex;
+
+		.feature {
+			display: inline-block;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+
+			vertical-align: top;
+			padding-top: 4rem;
+			border-radius: 0.5rem;
+			background: white;
+			text-align: center;
+			width: 22rem;
+			margin-right: 2rem;
+			margin-bottom: 2rem;
+			line-height: 1.4;
+
+			img {
+				width: 7rem;
+			}
+
+			p {
+				flex: 1;
+				background-color: $table-header-background;
+				margin-top: 4rem;
+				padding: 2rem;
+			}
+		}
+	}
+
+	.logos {
+		margin-top: 2rem;
+
+		a { @extend .hover-link-button; }
+		img { vertical-align: middle; max-width: 20rem; }
+		a + a { margin-left: 2rem; }
+		
+		#school-of-data-logo img { max-width: 11rem; }
+		#delna-logo img { max-width: 16rem; }
+		#okee-logo img { max-width: 18rem; }
+	}
+
+	.epilogue {
+		margin: 4rem auto 0;
+		text-align: center;
+		max-width: 60rem;
+		line-height: 1.5;
+		
+		a { @extend .link-button; }
 	}
 }
 
@@ -912,9 +976,17 @@ section.centered {
 		margin-top: $line;
 		margin-bottom: $line;
 
-		img {
-			vertical-align: middle;
-			max-width: 20rem;
+		a {
+			text-decoration: none;
+
+			@extend .hover-link-button;
 		}
+
+		img { vertical-align: middle; max-width: 20rem; }
+		a + a { margin-left: 1rem; }
+		
+		#school-of-data-logo img { max-width: 11rem; }
+		#delna-logo img { max-width: 16rem; }
+		#okee-logo img { max-width: 18rem; }
 	}
 }

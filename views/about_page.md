@@ -5,19 +5,19 @@ Opener was developed to its current version through the Anti-Corruption Challeng
     <img alt="Korruptsioonivaba Eesti" src="/assets/kv-logo.png">
   </a>
 
-  <a href="https://lv.schoolofdata.org" class="logo">
-    <img alt="School of Data Latvia" src="/assets/school-of-data-latvia-logo.png">
-  </a>
-
-  <a href="https://delna.lv" class="logo">
+  <a href="https://delna.lv" id="delna-logo" class="logo">
     <img alt="Delna" src="/assets/delna-logo.png">
   </a>
 
-  <a href="https://www.just.ee" class="logo">
-    <img alt="Estonian Ministry of Justice" src="/assets/ministry-of-justice-logo.png">
+  <a href="https://lv.schoolofdata.org" id="school-of-data-logo" class="logo">
+    <img alt="School of Data Latvia" src="/assets/school-of-data-latvia-logo.png">
   </a>
 
-  <a href="https://okee.ee/" class="logo">
+  <a href="https://www.just.ee" class="logo">
+    <img alt="Estonian Ministry of Justice" src="/assets/ministry-of-justice-logo.svg">
+  </a>
+
+  <a href="https://okee.ee/" id="okee-logo" class="logo">
     <img alt="Open Knowledge Estonia" src="/assets/okee-logo.png">
   </a>
 </div>

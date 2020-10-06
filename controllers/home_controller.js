@@ -3,9 +3,8 @@ var Router = require("express").Router
 
 exports.router = Router({mergeParams: true})
 
-exports.router.get("/", (_req, res) => res.redirect("/procurements"))
-
 _.each({
+	"/": "home_page.jsx",
 	"/about": "about_page.jsx",
 }, (page, path) => (
 	exports.router.get(path, (_req, res) => res.render(page))
