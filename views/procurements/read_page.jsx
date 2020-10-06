@@ -232,7 +232,7 @@ module.exports = function(attrs) {
 				<tbody>{contracts.map(function(contract) {
 					var sellerId = contract.seller_country + ":" + contract.seller_id
 					var seller = sellersById[sellerId]
-					var donations = seller.donations
+					var donations = seller && seller.donations || []
 
 					return <Fragment>
 						<tr id={"contract-" + contract.id} class="contract">
