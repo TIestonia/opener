@@ -10,3 +10,4 @@ Images
 - ![public/assets/home-donation.svg](public/assets/home-donation.svg) — [Vitaly Gorbachev](https://www.flaticon.com/authors/vitaly-gorbachev)
 - ![public/assets/home-graph.svg](public/assets/home-graph.svg) — [Vitaly Gorbachev](https://www.flaticon.com/authors/vitaly-gorbachev)
 - ![public/assets/home-filter.svg](public/assets/home-filter.svg) — [Vitaly Gorbachev](https://www.flaticon.com/authors/vitaly-gorbachev)
+- ![public/assets/expand.svg](public/assets/expand.svg) — [Vitaly Gorbachev](https://www.flaticon.com/authors/vitaly-gorbachev)

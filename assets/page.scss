@@ -1,6 +1,5 @@
 @import "reset";
 @import "fonts";
-@import "node_modules/vis-network/styles/vis-network";
 $page-width: 102rem;
 $page-padding: 4rem;
 $body-font: Lato, Helvetica, Arial, sans-serif;
@@ -639,11 +638,54 @@ section.centered {
 
 			.vis-network:focus { outline: none; }
 
+			.vis-navigation {
+				position: absolute;
+				top: 5px;
+				right: 40px;
+			}
+
+			.vis-button {
+				width: 3.2rem;
+				height: 3.2rem;
+				display: inline-block;
+				border-radius: 50%;
+				background-repeat:no-repeat;
+				cursor: pointer;
+				background-size: cover;
+				position: absolute;
+				left: 0;
+
+				-webkit-touch-callout: none;
+				-webkit-user-select: none;
+				-moz-user-select: none;
+				-ms-user-select: none;
+				user-select: none;
+			}
+
+			.vis-button:active {
+				box-shadow: 0 0 5px #86d5f8;
+			}
+
 			.vis-button.vis-up,
 			.vis-button.vis-down,
 			.vis-button.vis-left,
 			.vis-button.vis-right {
 				display: none;
+			}
+
+			.vis-button.vis-zoomIn {
+				background-image: url("/assets/zoom-in.svg");
+				top: 0;
+			}
+
+			.vis-button.vis-zoomOut {
+				background-image: url("/assets/zoom-out.svg");
+				top: 40px;
+			}
+
+			.vis-button.vis-zoomExtends {
+				background-image: url("/assets/expand.svg");
+				top: 80px;
 			}
 		}
 
