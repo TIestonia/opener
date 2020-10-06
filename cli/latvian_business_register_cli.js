@@ -361,7 +361,7 @@ var ROLES = {
 	BRANCH_REPRESENTATIVE: "branch_representative",
 
 	EXECUTIVE_BOARD: {
-		BOARD_MEMBER: "executive_board_memeber",
+		BOARD_MEMBER: "executive_board_member",
 		CHAIR_OF_BOARD: "chair_of_executive_board",
 	},
 
