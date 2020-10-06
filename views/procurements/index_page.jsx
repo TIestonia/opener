@@ -33,6 +33,14 @@ var ORDER_NAMES = {
 	cost: "cost"
 }
 
+var COMPARATORS = {
+	"<": "less than",
+	"<=": "at most",
+	"=": "exactly",
+	">=": "at least",
+	">": "more than"
+}
+
 function IndexPage(attrs) {
 	var {req} = attrs
 	var {procurements} = attrs
@@ -56,7 +64,7 @@ function IndexPage(attrs) {
 
 		<Section>
 			<p class="intro-text">
-				Here you can review and filter public procurements from <a href={path + "?country=EE"} class="example-filter-link">Estonia</a> and <a href={path + "?country=LV"} class="example-filter-link">Latvia</a> from 2018–2019. Try filtering for <a href={path + "?bidding-duration<14d&bidder-count=1"} class="example-filter-link">Single bidder procurements with brief bidding periods</a> or <a href={path + "?political-party-donations<=12"} class="example-filter-link">Contracts won after political donations</a>, or create your own below.
+				Here you can review and filter public procurements from <a href={path + "?country=EE"} class="example-filter-link">Estonia</a> and <a href={path + "?country=LV"} class="example-filter-link">Latvia</a> from 2018–2019. Try filtering for <a href={path + "?bidding-duration<14d&bidder-count=1"} class="example-filter-link">Single bidder procurements with brief bidding periods</a> or <a href={path + "?political-party-donations<=12"} class="example-filter-link">Contracts won before or after political donations</a>, or create your own below.
 			</p>
 		</Section>
 
@@ -82,6 +90,7 @@ function IndexPage(attrs) {
 				query={query}
 				order={order}
 				procurements={procurements}
+				donationRange={filters["political-party-donations"]}
 				sortable
 			/>
 
@@ -248,7 +257,7 @@ function ProcurementFiltersView(attrs) {
 					min="0"
 					disabled={!politicalPartyDonations}
 					value={politicalPartyDonations && politicalPartyDonations[1]}
-				/> months before
+				/> months before or after
 			</li>
 		</ul>
 
@@ -280,6 +289,7 @@ function ProcurementList(attrs) {
 	var {sortable} = attrs
 	var {showAllContracts} = attrs
 	var {order} = attrs
+	var {donationRange} = attrs
 	var showBuyer = attrs.showBuyer === undefined ? true : attrs.showBuyer
 	var {path} = attrs
 	var {query} = attrs
@@ -493,11 +503,22 @@ function ProcurementList(attrs) {
 					</td>
 				</tr> : null}
 
-				{donations.length > 0 ? <tr class="procurement-donations">
+				{(
+					donationRange && donations.length > 0
+				) ? <tr class="procurement-donations">
 					<td colspan="5">
 						<p>
-							Political donations by board-members prior to contract
-							totalling <MoneyElement
+							Political donations by board-members
+							{" "}
+							{COMPARATORS[donationRange[0]]}
+							{" "}
+							{Number(donationRange[1])}
+							{" "}
+							{_.plural(Number(donationRange[1]), "month", "months")}
+							{" "}
+							before or after totalling
+							{" "}
+							<MoneyElement
 								currency="EUR"
 								amount={_.sum(_.map(donations, "amount"))}
 							/>.
@@ -536,14 +557,6 @@ function ProcurementList(attrs) {
 			</Fragment>
 		})}</tbody>
 	</Table>
-}
-
-var COMPARATORS = {
-	"<": "less than",
-	"<=": "at most",
-	"=": "exactly",
-	">=": "at least",
-	">": "more than"
 }
 
 function FilterDescriptionElement(attrs) {
@@ -624,7 +637,7 @@ function FilterDescriptionElement(attrs) {
 		attributeCriteria.push(_.intercalate([
 			<strong>political party donations</strong>,
 			COMPARATORS[politicalPartyDonations[0]],
-			<strong>{months} {_.plural(months, "month", "months")} before</strong>
+			<strong>{months} {_.plural(months, "month", "months")} before or after</strong>
 		], " "))
 	}
 

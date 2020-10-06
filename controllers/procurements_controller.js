@@ -102,30 +102,63 @@ exports.router.get("/", next(function*(req, res) {
 		AND seller.id = contract.seller_id
 
 		${politicalPartyDonations ? sql`
-			JOIN organization_people AS buyer_role
-			ON buyer_role.organization_country = buyer.country
-			AND buyer_role.organization_id = buyer.id
-
-			JOIN people AS buyer_person
-			ON buyer_person.id = buyer_role.person_id
-
-			JOIN political_party_members AS buyer_party_member
-			ON buyer_party_member.normalized_name = buyer_person.normalized_name
-			AND buyer_party_member.birthdate = buyer_person.birthdate
-
 			JOIN organization_people AS seller_role
 			ON seller_role.organization_country = seller.country
 			AND seller_role.organization_id = seller.id
+
+			AND datetime(seller_role.started_at, 'localtime') <
+				datetime(procurement.deadline_at, 'localtime', '+1 year')
+
+			AND (
+				seller_role.ended_at IS NULL OR
+				datetime(seller_role.ended_at, 'localtime') >
+				datetime(procurement.published_at, 'localtime', '-1 year')
+			)
 
 			JOIN people AS donator ON donator.id = seller_role.person_id
 
 			JOIN political_party_donations AS donation
 			ON donation.donator_normalized_name = donator.normalized_name
 			AND donation.donator_birthdate = donator.birthdate
-			AND donation.party_id = buyer_party_member.party_id
+
+			AND (
+				procurement.country != 'EE' OR
+				donation.party_id = buyer_party_member.party_id
+			)
+
+			AND datetime(procurement.published_at, 'localtime', ${
+				"-" + Number(politicalPartyDonations[1]) + " months"
+			}) ${COMPARATORS[politicalPartyDonations[0]]}
+				datetime(donation.date, 'localtime')
+
+			AND datetime(donation.date, 'localtime')
+				${COMPARATORS[politicalPartyDonations[0]]}
+				datetime(procurement.deadline_at, 'localtime', ${
+					"+" + Number(politicalPartyDonations[1]) + " months"
+				})
 
 			JOIN political_parties AS donation_party
 			ON donation_party.id = donation.party_id
+
+			LEFT JOIN organization_people AS buyer_role
+			ON buyer_role.organization_country = buyer.country
+			AND buyer_role.organization_id = buyer.id
+
+			AND datetime(buyer_role.started_at, 'localtime') <
+				datetime(procurement.deadline_at, 'localtime', '+1 year')
+
+			AND (
+				buyer_role.ended_at IS NULL OR
+				datetime(buyer_role.ended_at, 'localtime') >
+				datetime(procurement.published_at, 'localtime', '-1 year')
+			)
+
+			LEFT JOIN people AS buyer_person
+			ON buyer_person.id = buyer_role.person_id
+
+			LEFT JOIN political_party_members AS buyer_party_member
+			ON buyer_party_member.normalized_name = buyer_person.normalized_name
+			AND buyer_party_member.birthdate = buyer_person.birthdate
 		` : sql``}
 
 		WHERE 1 = 1
@@ -160,34 +193,6 @@ exports.router.get("/", next(function*(req, res) {
 			AND procurement.cost ${COMPARATORS[cost[0]]}
 			${Number(cost[1])}`
 		: sql``}
-
-		${politicalPartyDonations ? sql`
-			AND datetime(procurement.deadline_at, 'localtime', ${
-				"-" + Number(politicalPartyDonations[1]) + " months"
-			}) ${COMPARATORS[politicalPartyDonations[0]]}
-				datetime(donation.date, 'localtime')
-
-			AND datetime(donation.date, 'localtime') <
-				datetime(procurement.deadline_at, 'localtime')
-
-			AND datetime(donation.date, 'localtime') >=
-				datetime(seller_role.started_at, 'localtime')
-
-			AND (
-				datetime(donation.date, 'localtime') <
-				datetime(seller_role.ended_at, 'localtime') OR
-				seller_role.ended_at IS NULL
-			)
-
-			AND datetime(donation.date, 'localtime') >=
-				datetime(buyer_role.started_at, 'localtime')
-
-			AND (
-				datetime(donation.date, 'localtime') <
-				datetime(buyer_role.ended_at, 'localtime') OR
-				buyer_role.ended_at IS NULL
-			)
-		` : sql``}
 
 		GROUP BY procurement.country, procurement.id
 
@@ -259,13 +264,13 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 		ON role.organization_country = org.country
 		AND role.organization_id = org.id
 
-		AND datetime(${procurement.deadline_at}, 'localtime') >=
-			datetime(role.started_at, 'localtime')
+		AND datetime(role.started_at, 'localtime') <
+			datetime(${procurement.deadline_at}, 'localtime', '+1 year')
 
 		AND (
-			datetime(${procurement.deadline_at}, 'localtime') <
-			datetime(role.ended_at, 'localtime') OR
-			role.ended_at IS NULL
+			role.ended_at IS NULL OR
+			datetime(role.ended_at, 'localtime') >
+			datetime(${procurement.published_at}, 'localtime', '-1 year')
 		)
 
 		LEFT JOIN people AS person ON person.id = role.person_id
@@ -323,27 +328,17 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 		ON procurement.country = contract.procurement_country
 		AND procurement.id = contract.procurement_id
 
-		LEFT JOIN organization_people AS buyer_role
-		ON buyer_role.organization_country = procurement.buyer_country
-		AND buyer_role.organization_id = procurement.buyer_id
-
-		LEFT JOIN people AS buyer_person ON buyer_person.id = buyer_role.person_id
-
-		LEFT JOIN political_party_members AS buyer_party_member
-		ON buyer_party_member.normalized_name = buyer_person.normalized_name
-		AND buyer_party_member.birthdate = buyer_person.birthdate
-
 		LEFT JOIN organization_people AS seller_role
 		ON seller_role.organization_country = seller.country
 		AND seller_role.organization_id = seller.id
 
-		AND datetime(procurement.deadline_at, 'localtime') >=
-			datetime(seller_role.started_at, 'localtime')
+		AND datetime(seller_role.started_at, 'localtime') <
+			datetime(procurement.deadline_at, 'localtime', '+1 year')
 
 		AND (
-			datetime(procurement.deadline_at, 'localtime') <
-			datetime(seller_role.ended_at, 'localtime') OR
-			seller_role.ended_at IS NULL
+			seller_role.ended_at IS NULL OR
+			datetime(seller_role.ended_at, 'localtime') >
+			datetime(procurement.published_at, 'localtime', '-1 year')
 		)
 
 		LEFT JOIN people AS seller_person
@@ -359,31 +354,12 @@ exports.router.get(ID_PATH, next(function*(req, res) {
 		LEFT JOIN political_party_donations AS donation
 		ON donation.donator_normalized_name = seller_person.normalized_name
 		AND donation.donator_birthdate = seller_person.birthdate
-		AND donation.party_id = buyer_party_member.party_id
 
 		AND datetime(donation.date, 'localtime') >=
-			datetime(procurement.deadline_at, 'localtime', '-1 year')
+			datetime(procurement.published_at, 'localtime', '-1 year')
 
 		AND datetime(donation.date, 'localtime') <
-			datetime(procurement.deadline_at, 'localtime')
-
-		AND datetime(donation.date, 'localtime') >=
-			datetime(seller_role.started_at, 'localtime')
-
-		AND (
-			datetime(donation.date, 'localtime') <
-			datetime(seller_role.ended_at, 'localtime') OR
-			seller_role.ended_at IS NULL
-		)
-
-		AND datetime(donation.date, 'localtime') >=
-			datetime(buyer_role.started_at, 'localtime')
-
-		AND (
-			datetime(donation.date, 'localtime') <
-			datetime(buyer_role.ended_at, 'localtime') OR
-			buyer_role.ended_at IS NULL
-		)
+			datetime(procurement.deadline_at, 'localtime', '+1 year')
 
 		LEFT JOIN political_parties AS donation_party
 		ON donation_party.id = donation.party_id
