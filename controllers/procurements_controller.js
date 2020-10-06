@@ -13,7 +13,7 @@ var {parseFilters} = require("root/lib/filtering")
 var {parseOrder} = require("root/lib/filtering")
 var ID_PATH = "/:country([A-Z][A-Z])::id"
 var COMPARATORS = require("root/lib/filtering").COMPARATOR_SQL
-var PAGE_SIZE = 1000
+var PAGE_SIZE = 500
 exports.router = Router({mergeParams: true})
 exports.PAGE_SIZE = PAGE_SIZE
 
