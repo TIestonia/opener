@@ -4,7 +4,7 @@ var TI_BLUE = "#3695d8"
 var FONT_FAMILY = "Lato, Helvetica, Arial, sans-serif"
 
 exports.visualize = function(el, graph) {
-  new VisNetwork(el, {
+  var network = new VisNetwork(el, {
 		nodes: new VisDataSet(graph.nodes),
 		edges: new VisDataSet(graph.edges)
 	}, {
@@ -97,5 +97,14 @@ exports.visualize = function(el, graph) {
 				}
 			}
 		}
+	})
+
+	network.on("doubleClick", function(ev) {
+		var pointer = this.interactionHandler.getPointer(ev.event.center)
+		var scale = this.interactionHandler.body.view.scale * 1.3
+
+		this.interactionHandler.options.zoomView = true
+		try { this.interactionHandler.zoom(scale, pointer) }
+		finally { this.interactionHandler.options.zoomView = false }
 	})
 }
