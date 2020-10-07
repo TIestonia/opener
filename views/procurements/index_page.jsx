@@ -23,6 +23,7 @@ var COUNTRIES = require("root/lib/countries")
 var ROLES = require("root/lib/procurement").ORGANIZATION_ROLES
 var SUPPORTED_COUNTRIES = require("root/config").countries
 var {PAGE_SIZE} = require("root/controllers/procurements_controller")
+var COMPARATOR_OPTIONS = new Set([null, "<", "<=", "=", ">=", ">"])
 exports = module.exports = IndexPage
 exports.ProcurementList = ProcurementList
 
@@ -35,7 +36,7 @@ var ORDER_NAMES = {
 	cost: "cost"
 }
 
-var COMPARATORS = {
+var COMPARATOR_NAMES = {
 	"<": "less than",
 	"<=": "at most",
 	"=": "exactly",
@@ -248,6 +249,7 @@ function ProcurementFiltersView(attrs) {
 
 				<ComparisonSelectInput
 					value={politicalPartyDonations && politicalPartyDonations[0]}
+					options={[null, "<", "<="]}
 				/>
 
 				<input
@@ -274,15 +276,28 @@ function ProcurementFiltersView(attrs) {
 }
 
 function ComparisonSelectInput(attrs) {
-	var value = attrs.value
+	var {value} = attrs
+	var options = attrs.options ? new Set(attrs.options) : COMPARATOR_OPTIONS
 
 	return <select name={attrs.name} class="comparison-select">
-		<option value="" selected={value == null}>All</option>
-		<option value="<" selected={value == "<"}>Less than</option>
-		<option value="<=" selected={value == "<="}>At most</option>
-		<option value="=" selected={value == "="}>Exactly</option>
-		<option value=">=" selected={value == ">="}>At least</option>
-		<option value=">" selected={value == ">"}>More than</option>
+		<option value="" selected={value == null} disabled={!options.has(null)}>
+			All
+		</option>
+		<option value="<" selected={value == "<"} disabled={!options.has("<")}>
+			Less than
+		</option>
+		<option value="<=" selected={value == "<="} disabled={!options.has("<=")}>
+			At most
+		</option>
+		<option value="=" selected={value == "="} disabled={!options.has("=")}>
+			Exactly
+		</option>
+		<option value=">=" selected={value == ">="} disabled={!options.has(">=")}>
+			At least
+		</option>
+		<option value=">" selected={value == ">"} disabled={!options.has(">")}>
+			More than
+		</option>
 	</select>
 }
 
@@ -512,7 +527,7 @@ function ProcurementList(attrs) {
 						<p>
 							Political donations by board-members
 							{" "}
-							{COMPARATORS[donationRange[0]]}
+							{COMPARATOR_NAMES[donationRange[0]]}
 							{" "}
 							{Number(donationRange[1])}
 							{" "}
@@ -600,7 +615,7 @@ function FilterDescriptionElement(attrs) {
 
 		attributeCriteria.push(_.intercalate([
 			<strong>bidding duration</strong>,
-			COMPARATORS[biddingDuration[0]],
+			COMPARATOR_NAMES[biddingDuration[0]],
 			<strong>{days} {_.plural(days, "day", "days")}</strong>
 		], " "))
 	}
@@ -608,7 +623,7 @@ function FilterDescriptionElement(attrs) {
 	var cost = filters.cost
 	if (cost) attributeCriteria.push(_.intercalate([
 		<strong>cost</strong>,
-		COMPARATORS[cost[0]],
+		COMPARATOR_NAMES[cost[0]],
 		<MoneyElement currency="EUR" amount={Number(cost[1])} />
 	], " "))
 
@@ -617,7 +632,7 @@ function FilterDescriptionElement(attrs) {
 		let count = Number(bidderCount[1])
 
 		attributeCriteria.push(_.intercalate([
-			COMPARATORS[bidderCount[0]],
+			COMPARATOR_NAMES[bidderCount[0]],
 			<strong>{count} {_.plural(count, "bidder", "bidders")}</strong>
 		], " "))
 	}
@@ -627,7 +642,7 @@ function FilterDescriptionElement(attrs) {
 		let count = Number(contractCount[1])
 
 		attributeCriteria.push(_.intercalate([
-			COMPARATORS[contractCount[0]],
+			COMPARATOR_NAMES[contractCount[0]],
 			<strong>{count} {_.plural(count, "contract", "contracts")}</strong>
 		], " "))
 	}
@@ -638,7 +653,7 @@ function FilterDescriptionElement(attrs) {
 
 		attributeCriteria.push(_.intercalate([
 			<strong>political party donations</strong>,
-			COMPARATORS[politicalPartyDonations[0]],
+			COMPARATOR_NAMES[politicalPartyDonations[0]],
 			<strong>{months} {_.plural(months, "month", "months")} before or after</strong>
 		], " "))
 	}
