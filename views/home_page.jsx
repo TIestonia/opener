@@ -12,7 +12,7 @@ module.exports = function(attrs) {
 
 		<Section>
 			<p class="tagline">
-				Detecting conflicts of interest in public procurement and political financing across border
+				Detecting conflicts of interest in public procurement and political financing across borders
 			</p>
 
 			<ul class="features">
