@@ -585,25 +585,25 @@ function FilterDescriptionElement(attrs) {
 	var attributeCriteria = []
 
 	var country = filters.country
-	if (country) generalCriteria.push(_.intercalate([
+	if (country) generalCriteria.push(_.intersperse([
 		"from",
 		<strong>{COUNTRIES[country[1]].name}</strong>
 	], " "))
 
 	var publishedSince = filters["published-since"]
-	if (publishedSince) generalCriteria.push(_.intercalate([
+	if (publishedSince) generalCriteria.push(_.intersperse([
 		"from",
 		<strong><DateElement at={new Date(publishedSince[1])} /></strong>
 	], " "))
 
 	var publishedUntil = filters["published-until"]
-	if (publishedUntil) generalCriteria.push(_.intercalate([
+	if (publishedUntil) generalCriteria.push(_.intersperse([
 		"until",
 		<strong><DateElement at={new Date(publishedUntil[1])} /></strong>
 	], " "))
 
 	var procedureType = filters["procedure-type"]
-	if (procedureType) attributeCriteria.push(_.intercalate([
+	if (procedureType) attributeCriteria.push(_.intersperse([
 		"the",
 		<strong>{PROCEDURE_TYPES[procedureType[1]]}</strong>,
 		"process",
@@ -613,7 +613,7 @@ function FilterDescriptionElement(attrs) {
 	if (biddingDuration) {
 		var days = Number(biddingDuration[1].replace(/d$/, ""))
 
-		attributeCriteria.push(_.intercalate([
+		attributeCriteria.push(_.intersperse([
 			<strong>bidding duration</strong>,
 			COMPARATOR_NAMES[biddingDuration[0]],
 			<strong>{days} {_.plural(days, "day", "days")}</strong>
@@ -621,7 +621,7 @@ function FilterDescriptionElement(attrs) {
 	}
 
 	var cost = filters.cost
-	if (cost) attributeCriteria.push(_.intercalate([
+	if (cost) attributeCriteria.push(_.intersperse([
 		<strong>cost</strong>,
 		COMPARATOR_NAMES[cost[0]],
 		<MoneyElement currency="EUR" amount={Number(cost[1])} />
@@ -631,7 +631,7 @@ function FilterDescriptionElement(attrs) {
 	if (bidderCount) {
 		let count = Number(bidderCount[1])
 
-		attributeCriteria.push(_.intercalate([
+		attributeCriteria.push(_.intersperse([
 			COMPARATOR_NAMES[bidderCount[0]],
 			<strong>{count} {_.plural(count, "bidder", "bidders")}</strong>
 		], " "))
@@ -641,7 +641,7 @@ function FilterDescriptionElement(attrs) {
 	if (contractCount) {
 		let count = Number(contractCount[1])
 
-		attributeCriteria.push(_.intercalate([
+		attributeCriteria.push(_.intersperse([
 			COMPARATOR_NAMES[contractCount[0]],
 			<strong>{count} {_.plural(count, "contract", "contracts")}</strong>
 		], " "))
@@ -651,7 +651,7 @@ function FilterDescriptionElement(attrs) {
 	if (politicalPartyDonations) {
 		let months = Number(politicalPartyDonations[1])
 
-		attributeCriteria.push(_.intercalate([
+		attributeCriteria.push(_.intersperse([
 			<strong>political party donations</strong>,
 			COMPARATOR_NAMES[politicalPartyDonations[0]],
 			<strong>{months} {_.plural(months, "month", "months")} before or after</strong>
@@ -663,12 +663,12 @@ function FilterDescriptionElement(attrs) {
 
 		{generalCriteria.length > 0 ? [
 			" ",
-			_.intercalate(generalCriteria, " ")
+			_.intersperse(generalCriteria, " ")
 		] : null}
 
 		{attributeCriteria.length > 0 ? [
 			" with ", attributeCriteria.length > 1 ? [
-				_.intercalate(attributeCriteria.slice(0, -1), ", "),
+				_.intersperse(attributeCriteria.slice(0, -1), ", "),
 				" and ",
 				_.last(attributeCriteria)
 			] : attributeCriteria
@@ -698,7 +698,7 @@ function Pagination(attrs) {
 	).sort(_.sub)), (a, b) => a + 1 == b)
 
 	return <ol id="pagination">
-		{_.intercalate(pageGroups.map((pages) => pages.map(function(page) {
+		{_.intersperse(pageGroups.map((pages) => pages.map(function(page) {
 			var url = path + "?" + Qs.stringify(_.assign({}, query, {
 				offset: page * pageSize
 			}))

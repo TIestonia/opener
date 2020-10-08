@@ -208,7 +208,7 @@ function FilterDescriptionElement(attrs) {
 	var attributeCriteria = []
 
 	var country = filters.country
-	if (country) generalCriteria.push(_.intercalate([
+	if (country) generalCriteria.push(_.intersperse([
 		"from",
 		<strong>{COUNTRIES[country[1]].name}</strong>
 	], " "))
@@ -218,12 +218,12 @@ function FilterDescriptionElement(attrs) {
 
 		{generalCriteria.length > 0 ? [
 			" ",
-			_.intercalate(generalCriteria, " ")
+			_.intersperse(generalCriteria, " ")
 		] : null}
 
 		{attributeCriteria.length > 0 ? [
 			" with ", attributeCriteria.length > 1 ? [
-				_.intercalate(attributeCriteria.slice(0, -1), ", "),
+				_.intersperse(attributeCriteria.slice(0, -1), ", "),
 				" and ",
 				_.last(attributeCriteria)
 			] : attributeCriteria
