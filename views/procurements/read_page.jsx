@@ -249,7 +249,10 @@ module.exports = function(attrs) {
 								</p>
 
 								<p class="dates">
-									Signed <DateElement at={contract.created_at} />
+									Signed {contract.created_at
+										? <DateElement at={contract.created_at} />
+										: "on an unknown date"
+									}
 
 									{contract.deadline_at ? <Fragment>
 										{" "}with completion deadline
