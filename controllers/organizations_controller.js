@@ -38,32 +38,44 @@ exports.router.get("/", next(function*(req, res) {
 			org.country,
 			org.id,
 			org.name,
-
-			COUNT(procurement.id) AS procurement_count,
-			SUM(COALESCE(procurement.cost, procurement.estimated_cost, 0))
-			AS procurements_cost,
-
-			COUNT(contract.id) AS contract_count,
-			SUM(COALESCE(contract.cost, contract.estimated_cost, 0))
-			AS contracts_cost
+			COALESCE(procurements.count, 0) AS procurement_count,
+			COALESCE(procurements.cost, 0) AS procurements_cost,
+			COALESCE(contracts.count, 0) AS contract_count,
+			COALESCE(contracts.cost, 0) AS contracts_cost
 
 		FROM organizations AS org
 
-		LEFT JOIN procurements AS procurement
-		ON procurement.buyer_country = org.country
-		AND procurement.buyer_id = org.id
+		LEFT JOIN (
+			SELECT
+				buyer_country,
+				buyer_id,
+				COUNT(*) AS count,
+				SUM(COALESCE(cost, estimated_cost, 0)) AS cost
 
-		LEFT JOIN procurement_contracts AS contract
-		ON contract.seller_country = org.country
-		AND contract.seller_id = org.id
+			FROM procurements
+			GROUP BY buyer_country, buyer_id
+		) AS procurements
+		ON procurements.buyer_country = org.country
+		AND procurements.buyer_id = org.id
+
+		LEFT JOIN (
+			SELECT
+				seller_country,
+				seller_id,
+				COUNT(*) AS count,
+				SUM(COALESCE(cost, estimated_cost, 0)) AS cost
+
+			FROM procurement_contracts AS contract
+			GROUP BY seller_country, seller_id
+		) AS contracts
+		ON contracts.seller_country = org.country
+		AND contracts.seller_id = org.id
 
 		WHERE 1 = 1
 
 		${country && country[1] ? sql`
 			AND org.country = ${country[1]}
 		`: sql``}
-
-		GROUP BY org.country, org.id
 
 		${order ? sql`
 			ORDER BY ${ORDER_COLUMNS[order[0]]}
