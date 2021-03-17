@@ -269,7 +269,7 @@ function* importProcurementsCsv(path) {
 
 function* importProcurementContracts(path) {
 	yield sqlite(sql`BEGIN`)
-	
+
 	var i = 0
 
 	yield Cli.stream(Cli.readCsv(path), co.wrap(function*(obj) {

@@ -28,7 +28,7 @@ exports.router.get("/", next(function*(req, res) {
 	var filters = parseFilters(FILTERS, req.query)
 	var country = filters.country
 	var order = req.query.order ? parseOrder(req.query.order) : ["name", "asc"]
-	
+
 	var organizationsCountries = _.map(yield sqlite(sql`
 		SELECT DISTINCT country FROM organizations
 	`), "country")

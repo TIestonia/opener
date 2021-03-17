@@ -7,7 +7,7 @@ lazy(exports, "sqlite", function() {
 
 	switch (ENV) {
 		case "test":
-			var sqlite = connect(":memory:")	
+			var sqlite = connect(":memory:")
 			var sql = require("sqlate")
 			sqlite.batch(String(Fs.readFileSync(__dirname + "/db/schema.sql")))
 			sqlite(sql`PRAGMA foreign_keys = ON`) // Schema resets foreign_keys.

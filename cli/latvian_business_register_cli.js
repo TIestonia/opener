@@ -233,7 +233,7 @@ function* updateOrganization(org, entity) {
 			console.warn(`Missing personal id or birth date for %s.`, personName)
 			continue
 		}
-		
+
 		var person = yield peopleDb.read(sql`
 			SELECT * FROM people
 			WHERE (
