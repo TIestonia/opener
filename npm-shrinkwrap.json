@@ -199,23 +199,6 @@
         }
       }
     },
-    "cookie-parser": {
-      "version": "1.4.3",
-      "from": "https://registry.npmjs.org/cookie-parser/-/cookie-parser-1.4.3.tgz",
-      "resolved": "https://registry.npmjs.org/cookie-parser/-/cookie-parser-1.4.3.tgz",
-      "dependencies": {
-        "cookie": {
-          "version": "0.3.1",
-          "from": "https://registry.npmjs.org/cookie/-/cookie-0.3.1.tgz",
-          "resolved": "https://registry.npmjs.org/cookie/-/cookie-0.3.1.tgz"
-        }
-      }
-    },
-    "cookie-signature": {
-      "version": "1.0.6",
-      "from": "cookie-signature@1.0.6",
-      "resolved": "https://registry.npmjs.org/cookie-signature/-/cookie-signature-1.0.6.tgz"
-    },
     "csv-parse": {
       "version": "1.3.3",
       "from": "csv-parse@>=1.0.0 <2.0.0",

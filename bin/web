@@ -7,7 +7,6 @@ var Fs = require("fs")
 var Url = require("url")
 var Http = require("http")
 var Express = require("express")
-var Config = require("root/config")
 var HttpError = require("standard-http-error")
 var PORT = process.env.PORT || 2718
 
@@ -25,8 +24,6 @@ app.use(Express.static(__dirname + "/../public", {
 }))
 
 app.use((req, res, next) => { res.locals.req = req; next() })
-
-app.use(require("cookie-parser")(Config.cookieSecret))
 
 _.each({
 	"/": require("../controllers/home_controller").router,
