@@ -16,7 +16,7 @@
 		"fetch-throw": "",
 		"fetch-parse": "",
 		"fetch-formify": "",
-		"sqlite3": "",
+		"sqlite3": "^4.2",
 		"sqlate": "",
 		"heaven-sqlite": "",
 		"medium-type": "",
