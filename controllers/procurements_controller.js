@@ -28,7 +28,8 @@ var FILTERS = [
 	"bidding-duration",
 	"cost",
 	"procedure-type",
-	"political-party-donations"
+	"political-party-donations",
+	"buyer"
 ]
 
 var ORDER_COLUMNS = {
@@ -50,8 +51,9 @@ exports.router.get("/", next(function*(req, res) {
 	var contractCount = filters["contract-count"]
 	var biddingDuration = filters["bidding-duration"]
 	var procedureType = filters["procedure-type"]
-	var cost = filters.cost
+	var {cost} = filters
 	var politicalPartyDonations = filters["political-party-donations"]
+	var {buyer} = filters
 	var order = req.query.order ? parseOrder(req.query.order) : null
 	var limit = req.query.limit ? Number(req.query.limit) : PAGE_SIZE
 	var offset = req.query.offset ? Number(req.query.offset) : 0
@@ -92,13 +94,20 @@ exports.router.get("/", next(function*(req, res) {
 				)) AS donations
 			` : sql``}
 
+		-- It seems faster to have the FTS table in FROM than JOIN.
 		${text ? sql`
-			-- It's faster to have the FTS table in FROM than JOIN.
 			FROM procurements_fts AS fts
 			JOIN procurements AS procurement ON procurement.rowid = fts.rowid
+		` : buyer ? sql`
+			FROM organizations_fts AS buyer_fts
+			JOIN procurements AS procurement
+			ON procurement.buyer_country = buyer_fts.country
+			AND procurement.buyer_id = buyer_fts.id
 		` : sql`
 			FROM procurements AS procurement
 		`}
+
+		${text && buyer ? sql`JOIN organizations_fts AS buyer_fts` : sql``}
 
 		JOIN organizations AS buyer
 		ON buyer.country = procurement.buyer_country
@@ -175,7 +184,11 @@ exports.router.get("/", next(function*(req, res) {
 		WHERE 1 = 1
 
 		${text ? sql`
-			AND fts MATCH ${serializeFts(text[1])}
+			AND fts.procurements_fts MATCH ${serializeFts(text[1])}
+		` : sql``}
+
+		${buyer ? sql`
+			AND buyer_fts.organizations_fts MATCH ${serializeFts(buyer[1])}
 		` : sql``}
 
 		${country ? sql`

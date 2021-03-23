@@ -11,10 +11,12 @@ var next = require("co-next")
 var ID_PATH = "/:country([A-Z][A-Z])::id"
 var {parseFilters} = require("root/lib/filtering")
 var {parseOrder} = require("root/lib/filtering")
+var {serializeFts} = require("root/lib/filtering")
 var sqlite = require("root").sqlite
 exports.router = Router({mergeParams: true})
 
 var FILTERS = [
+	"name",
 	"country"
 ]
 
@@ -26,8 +28,9 @@ var ORDER_COLUMNS = {
 
 exports.router.get("/", next(function*(req, res) {
 	var filters = parseFilters(FILTERS, req.query)
-	var country = filters.country
-	var order = req.query.order ? parseOrder(req.query.order) : ["name", "asc"]
+	var {name} = filters
+	var {country} = filters
+	var order = req.query.order ? parseOrder(req.query.order) : null
 
 	var organizationsCountries = _.map(yield sqlite(sql`
 		SELECT DISTINCT country FROM organizations
@@ -43,7 +46,12 @@ exports.router.get("/", next(function*(req, res) {
 			COALESCE(contracts.count, 0) AS contract_count,
 			COALESCE(contracts.cost, 0) AS contracts_cost
 
-		FROM organizations AS org
+		${name ? sql`
+			FROM organizations_fts AS fts
+			JOIN organizations AS org ON org.rowid = fts.rowid
+		` : sql`
+			FROM organizations AS org
+		`}
 
 		LEFT JOIN (
 			SELECT
@@ -73,6 +81,10 @@ exports.router.get("/", next(function*(req, res) {
 
 		WHERE 1 = 1
 
+		${name ? sql`
+			AND fts.organizations_fts MATCH ${serializeFts(name[1])}
+		` : sql``}
+
 		${country && country[1] ? sql`
 			AND org.country = ${country[1]}
 		`: sql``}
@@ -80,7 +92,7 @@ exports.router.get("/", next(function*(req, res) {
 		${order ? sql`
 			ORDER BY ${ORDER_COLUMNS[order[0]]}
 			${order[1] == "asc" ? sql`ASC` : sql`DESC`}
-		`: sql``}
+		`: name ? sql`ORDER BY fts.rank` : sql`ORDER BY name ASC`}
 	`)
 
 	res.render("organizations/index_page.jsx", {

@@ -118,9 +118,10 @@ function ProcurementFiltersView(attrs) {
 	var bidderCount = filters["bidder-count"]
 	var contractCount = filters["contract-count"]
 	var biddingDuration = filters["bidding-duration"]
-	var cost = filters.cost
+	var {cost} = filters
 	var procedureType = filters["procedure-type"]
 	var politicalPartyDonations = filters["political-party-donations"]
+	var {buyer} = filters
 
 	var {order} = attrs
 	var orderName = order && order[0]
@@ -272,6 +273,11 @@ function ProcurementFiltersView(attrs) {
 						disabled={!politicalPartyDonations}
 						value={politicalPartyDonations && politicalPartyDonations[1]}
 					/> months before or after
+				</li>
+
+				<li class="filter" id="buyer-filter">
+					<label>Buyer name or registry code</label>
+					<input type="search" name="buyer" value={buyer && buyer[1]} />
 				</li>
 			</ul>
 
@@ -617,6 +623,12 @@ function FilterDescriptionElement(attrs) {
 	if (text) generalCriteria.push(_.intersperse([
 		"matching",
 		<strong>{text[1]}</strong>
+	], " "))
+
+	var {buyer} = filters
+	if (buyer) generalCriteria.push(_.intersperse([
+		"with buyer",
+		<strong>{buyer[1]}</strong>
 	], " "))
 
 	var procedureType = filters["procedure-type"]

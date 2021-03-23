@@ -445,6 +445,10 @@ section.centered {
 
 		#cost-filter input { min-width: 10rem; }
 		#procedure-filter select { max-width: 20rem; }
+
+		#buyer-filter {
+			display: block;
+		}
 	}
 
 	#pagination {

@@ -31,9 +31,14 @@ module.exports = function(attrs) {
 	var orderName = order && order[0]
 	var orderDirection = order && order[1]
 
+	// Don't reflect the default order in the query to properly default to
+	// ordering by rank when searching by name.
 	var path = req.baseUrl
 	var query = serializeFiltersQuery(filters)
 	if (order) query.order = (order[1] == "asc" ? "" : "-") + order[0]
+
+	if (order == null && filters.name == null)
+		[orderName, orderDirection] = ["name", "asc"]
 
 	return <Page
 		page="organizations"
@@ -154,6 +159,7 @@ module.exports = function(attrs) {
 function OrganizationFiltersView(attrs) {
 	var req = attrs.req
 	var {filters} = attrs
+	var {name} = filters
 	var {country} = filters
 	var {availableCountries} = attrs
 	availableCountries = _.sortBy(availableCountries, (id) => COUNTRIES[id].name)
@@ -169,6 +175,11 @@ function OrganizationFiltersView(attrs) {
 	>
 		<FiltersView>
 			<ul>
+				<li class="filter" id="name-filter">
+					<label>Name</label>
+					<input type="search" name="name" value={name && name[1]} />
+				</li>
+
 				<li class="filter" id="country-filter">
 					<label>Country</label>
 
@@ -217,6 +228,12 @@ function FilterDescriptionElement(attrs) {
 	if (country) generalCriteria.push(_.intersperse([
 		"from",
 		<strong>{COUNTRIES[country[1]].name}</strong>
+	], " "))
+
+	var {name} = filters
+	if (name) generalCriteria.push(_.intersperse([
+		"named",
+		<strong>{name[1]}</strong>
 	], " "))
 
 	return <p class="filter-description">
