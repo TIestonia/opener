@@ -154,7 +154,7 @@ module.exports = function(attrs) {
 function OrganizationFiltersView(attrs) {
 	var req = attrs.req
 	var {filters} = attrs
-	var country = filters.country
+	var {country} = filters
 	var {availableCountries} = attrs
 	availableCountries = _.sortBy(availableCountries, (id) => COUNTRIES[id].name)
 
@@ -162,41 +162,47 @@ function OrganizationFiltersView(attrs) {
 	var orderName = order && order[0]
 	var orderDirection = order && order[1]
 
-	return <FiltersView action={req.baseUrl}>
-		<ul>
-			<li class="filter">
-				<label>Country</label>
+	return <form
+		id="filters"
+		action={req.baseUrl}
+		method="get"
+	>
+		<FiltersView>
+			<ul>
+				<li class="filter" id="country-filter">
+					<label>Country</label>
 
-				<select name="country">
-					<option value="" selected={!country || !country[1]}>All</option>
+					<select name="country">
+						<option value="" selected={!country || !country[1]}>All</option>
 
-					{SUPPORTED_COUNTRIES.map((id) => <option
-						value={id}
-						selected={country && country[1] == id}
-					>
-						{COUNTRIES[id].name}
-					</option>)}
-
-					<optgroup label="All Countries">
-						{availableCountries.map((id) => <option
+						{SUPPORTED_COUNTRIES.map((id) => <option
 							value={id}
 							selected={country && country[1] == id}
 						>
 							{COUNTRIES[id].name}
 						</option>)}
-					</optgroup>
-				</select>
-			</li>
-		</ul>
 
-		{order ? <input
-			type="hidden"
-			name="order"
-			value={(orderDirection == "asc" ? "" : "-") + orderName}
-		/> : null}
+						<optgroup label="All Countries">
+							{availableCountries.map((id) => <option
+								value={id}
+								selected={country && country[1] == id}
+							>
+								{COUNTRIES[id].name}
+							</option>)}
+						</optgroup>
+					</select>
+				</li>
+			</ul>
 
-		<button type="submit">Filter Procurements</button>
-	</FiltersView>
+			{order ? <input
+				type="hidden"
+				name="order"
+				value={(orderDirection == "asc" ? "" : "-") + orderName}
+			/> : null}
+
+			<button type="submit">Filter Procurements</button>
+		</FiltersView>
+	</form>
 }
 
 function FilterDescriptionElement(attrs) {
@@ -232,5 +238,6 @@ function FilterDescriptionElement(attrs) {
 		{order ? <Fragment>
 			{" "}sorted by <strong>{ORDER_NAMES[order[0]]}</strong>
 		</Fragment> : null}
+		.
 	</p>
 }

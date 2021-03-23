@@ -137,45 +137,42 @@ function MoneyElement(attrs) {
 	</span>
 }
 
-function FiltersView(attrs, children) {
-	var {action} = attrs
-
-	return <div id="filters" class="opener-filters">
+function FiltersView(_attrs, children) {
+	return <div class="opener-filters">
 		<input id="filters-toggle" type="checkbox" hidden />
-		<label for="filters-toggle" class="link-button">Show filters</label>
 
-		<form
-			id="filter-form"
-			action={action}
-			method="get"
-		>
+		<label for="filters-toggle" class="link-button">
+			Show search and filters
+		</label>
+
+		<fieldset>
 			{children}
+		</fieldset>
 
-			<script>{javascript`(function() {
-				var forEach = Function.call.bind(Array.prototype.forEach)
-				var selects = document.getElementsByClassName("comparison-select")
-				var COMPARATOR_SUFFIXES = ${COMPARATOR_SUFFIXES}
+		<script>{javascript`(function() {
+			var forEach = Function.call.bind(Array.prototype.forEach)
+			var selects = document.getElementsByClassName("comparison-select")
+			var COMPARATOR_SUFFIXES = ${COMPARATOR_SUFFIXES}
 
-				forEach(selects, function(select) {
-					select.addEventListener("change", handleChange)
-				})
+			forEach(selects, function(select) {
+				select.addEventListener("change", handleChange)
+			})
 
-				function handleChange(ev) {
-					var select = ev.target
-					var comparator = select.value
+			function handleChange(ev) {
+				var select = ev.target
+				var comparator = select.value
 
-					var input = select.nextElementSibling
-					input.name = input.name.replace(/[<>]+$/, "")
-					input.disabled = !comparator
+				var input = select.nextElementSibling
+				input.name = input.name.replace(/[<>]+$/, "")
+				input.disabled = !comparator
 
-					if (comparator) {
-						input.name += COMPARATOR_SUFFIXES[comparator]
-						input.focus()
-					}
-					else input.value = ""
+				if (comparator) {
+					input.name += COMPARATOR_SUFFIXES[comparator]
+					input.focus()
 				}
-			})()`}</script>
-		</form>
+				else input.value = ""
+			}
+		})()`}</script>
 	</div>
 }
 

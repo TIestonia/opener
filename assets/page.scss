@@ -219,19 +219,22 @@ section.centered {
 
 .opener-filters {
 	#filters-toggle:checked + label,
-	#filters-toggle:not(:checked) ~ form { display: none; }
+	#filters-toggle:not(:checked) ~ fieldset { display: none; }
 
-	form {
+	fieldset {
+		display: block;
 		margin-top: 1rem;
 		background: white;
-		padding: 2rem;
+		// Depend on filter right-margin for right-padding.
+		padding: 2rem 0 2rem 2rem;
 		margin-left: -2rem;
 		margin-right: -2rem;
 	}
 
 	.filter {
 		display: inline-block;
-		margin-right: 2rem;
+		// Use padding so <input> max-width 100% works.
+		padding-right: 2rem;
 		margin-bottom: 1rem;
 
 		label {
@@ -433,15 +436,15 @@ section.centered {
 	}
 
 	#filters {
-		.filter {
-			.cost-input {
-				min-width: 10rem;
-			}
+		.filter { max-width: 100%; }
 
-			select[name=procedure-type] {
-				max-width: 20rem;
-			}
+		#text-filter {
+			display: block;
+			input { width: 100%; }
 		}
+
+		#cost-filter input { min-width: 10rem; }
+		#procedure-filter select { max-width: 20rem; }
 	}
 
 	#pagination {
@@ -791,11 +794,13 @@ section.centered {
 	}
 
 	#filters {
-		.filter {
-			select[name=country] {
-				max-width: 20rem;
-			}
+		.filter { max-width: 100%; }
+
+		#name-filter {
+			input { width: 40rem; max-width: 100%; }
 		}
+
+		#country-filter select { max-width: 15rem; }
 	}
 
 	#organizations {

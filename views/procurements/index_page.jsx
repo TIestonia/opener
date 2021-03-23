@@ -111,7 +111,8 @@ function IndexPage(attrs) {
 function ProcurementFiltersView(attrs) {
 	var req = attrs.req
 	var {filters} = attrs
-	var country = filters.country
+	var {text} = filters
+	var {country} = filters
 	var publishedSince = filters["published-since"]
 	var publishedUntil = filters["published-until"]
 	var bidderCount = filters["bidder-count"]
@@ -125,154 +126,164 @@ function ProcurementFiltersView(attrs) {
 	var orderName = order && order[0]
 	var orderDirection = order && order[1]
 
-	return <FiltersView action={req.baseUrl}>
-		<ul>
-			<li class="filter">
-				<label>Country</label>
+	return <form
+		id="filters"
+		action={req.baseUrl}
+		method="get"
+	>
+		<FiltersView>
+			<ul>
+				<li class="filter" id="text-filter">
+					<label>Title or description</label>
+					<input type="search" name="text" value={text && text[1]} />
+				</li>
 
-				<select name="country">
-					<option value="" selected={!country || !country[1]}>All</option>
+				<li class="filter">
+					<label>Country</label>
 
-					{SUPPORTED_COUNTRIES.map((id) => <option
-						value={id}
-						selected={country && country[1] == id}
-					>
-						{COUNTRIES[id].name}
-					</option>)}
-				</select>
-			</li>
+					<select name="country">
+						<option value="" selected={!country || !country[1]}>All</option>
 
-			<li class="filter">
-				<label>Publishing Date</label>
+						{SUPPORTED_COUNTRIES.map((id) => <option
+							value={id}
+							selected={country && country[1] == id}
+						>
+							{COUNTRIES[id].name}
+						</option>)}
+					</select>
+				</li>
 
-				<input
-					name="published-since"
-					type="date"
-					pattern="\d\d\d\d-\d\d-\d\d"
-					value={publishedSince && publishedSince[1]}
-				/>
+				<li class="filter">
+					<label>Publishing Date</label>
 
-				{" until "}
+					<input
+						name="published-since"
+						type="date"
+						pattern="\d\d\d\d-\d\d-\d\d"
+						value={publishedSince && publishedSince[1]}
+					/>
 
-				<input
-					name="published-until"
-					type="date"
-					pattern="\d\d\d\d-\d\d-\d\d"
-					value={publishedUntil && publishedUntil[1]}
-				/>
-			</li>
+					{" until "}
 
-			<br />
+					<input
+						name="published-until"
+						type="date"
+						pattern="\d\d\d\d-\d\d-\d\d"
+						value={publishedUntil && publishedUntil[1]}
+					/>
+				</li>
 
-			<li class="filter">
-				<label>Bidding Duration</label>
+				<br />
 
-				<ComparisonSelectInput
-					value={biddingDuration && biddingDuration[0]}
-				/>
+				<li class="filter">
+					<label>Bidding Duration</label>
 
-				<input
-					name={"bidding-duration" + suffixComparator(biddingDuration)}
-					type="number"
-					min="0"
-					disabled={!biddingDuration}
-					value={biddingDuration && biddingDuration[1].replace(/d$/, "")}
-				/> days
-			</li>
+					<ComparisonSelectInput
+						value={biddingDuration && biddingDuration[0]}
+					/>
 
-			<li class="filter">
-				<label>Bidder Count</label>
+					<input
+						name={"bidding-duration" + suffixComparator(biddingDuration)}
+						type="number"
+						min="0"
+						disabled={!biddingDuration}
+						value={biddingDuration && biddingDuration[1].replace(/d$/, "")}
+					/> days
+				</li>
 
-				<ComparisonSelectInput
-					value={bidderCount && bidderCount[0]}
-				/>
+				<li class="filter">
+					<label>Bidder Count</label>
 
-				<input
-					name={"bidder-count" + suffixComparator(bidderCount)}
-					type="number"
-					min="0"
-					disabled={!bidderCount}
-					value={bidderCount && bidderCount[1]}
-				/>
-			</li>
+					<ComparisonSelectInput
+						value={bidderCount && bidderCount[0]}
+					/>
 
-			<li class="filter">
-				<label>Procedure</label>
+					<input
+						name={"bidder-count" + suffixComparator(bidderCount)}
+						type="number"
+						min="0"
+						disabled={!bidderCount}
+						value={bidderCount && bidderCount[1]}
+					/>
+				</li>
 
-				<select name="procedure-type">
-					<option value="" selected={!procedureType}>All</option>
+				<li class="filter" id="procedure-filter">
+					<label>Procedure</label>
 
-					{_.map(PROCEDURE_TYPES, (title, type) => <option
-						value={type}
-						selected={procedureType && procedureType[1] == type}
-					>
-						{title}
-					</option>)}
-				</select>
-			</li>
+					<select name="procedure-type">
+						<option value="" selected={!procedureType}>All</option>
 
-			<li class="filter">
-				<label>Contract Count</label>
+						{_.map(PROCEDURE_TYPES, (title, type) => <option
+							value={type}
+							selected={procedureType && procedureType[1] == type}
+						>
+							{title}
+						</option>)}
+					</select>
+				</li>
 
-				<ComparisonSelectInput
-					value={contractCount && contractCount[0]}
-				/>
+				<li class="filter">
+					<label>Contract Count</label>
 
-				<input
-					name={"contract-count" + suffixComparator(contractCount)}
-					type="number"
-					min="0"
-					disabled={!contractCount}
-					value={contractCount && contractCount[1]}
-				/>
-			</li>
+					<ComparisonSelectInput
+						value={contractCount && contractCount[0]}
+					/>
 
-			<li class="filter">
-				<label>Cost</label>
+					<input
+						name={"contract-count" + suffixComparator(contractCount)}
+						type="number"
+						min="0"
+						disabled={!contractCount}
+						value={contractCount && contractCount[1]}
+					/>
+				</li>
 
-				<ComparisonSelectInput
-					value={cost && cost[0]}
-				/>
+				<li class="filter" id="cost-filter">
+					<label>Cost</label>
 
-				<input
-					class="cost-input"
-					name={"cost" + suffixComparator(cost)}
-					type="number"
-					min="0"
-					disabled={!cost}
-					value={cost && cost[1]}
-				/> euros
-			</li>
+					<ComparisonSelectInput
+						value={cost && cost[0]}
+					/>
 
-			<li class="filter">
-				<label>Possibly Related Political Donations</label>
+					<input
+						name={"cost" + suffixComparator(cost)}
+						type="number"
+						min="0"
+						disabled={!cost}
+						value={cost && cost[1]}
+					/> euros
+				</li>
 
-				<ComparisonSelectInput
-					value={politicalPartyDonations && politicalPartyDonations[0]}
-					options={[null, "<", "<="]}
-				/>
+				<li class="filter">
+					<label>Possibly Related Political Donations</label>
 
-				<input
-					name={
-						"political-party-donations" +
-						suffixComparator(politicalPartyDonations)
-					}
-					type="number"
-					min="0"
-					disabled={!politicalPartyDonations}
-					value={politicalPartyDonations && politicalPartyDonations[1]}
-				/> months before or after
-			</li>
-		</ul>
+					<ComparisonSelectInput
+						value={politicalPartyDonations && politicalPartyDonations[0]}
+						options={[null, "<", "<="]}
+					/>
 
-		{order ? <input
-			type="hidden"
-			name="order"
-			value={(orderDirection == "asc" ? "" : "-") + orderName}
-		/> : null}
+					<input
+						name={
+							"political-party-donations" +
+							suffixComparator(politicalPartyDonations)
+						}
+						type="number"
+						min="0"
+						disabled={!politicalPartyDonations}
+						value={politicalPartyDonations && politicalPartyDonations[1]}
+					/> months before or after
+				</li>
+			</ul>
 
-		<button type="submit">Filter Procurements</button>
-	</FiltersView>
+			{order ? <input
+				type="hidden"
+				name="order"
+				value={(orderDirection == "asc" ? "" : "-") + orderName}
+			/> : null}
+
+			<button type="submit">Filter Procurements</button>
+		</FiltersView>
+	</form>
 }
 
 function ComparisonSelectInput(attrs) {
@@ -584,7 +595,7 @@ function FilterDescriptionElement(attrs) {
 	var generalCriteria = []
 	var attributeCriteria = []
 
-	var country = filters.country
+	var {country} = filters
 	if (country) generalCriteria.push(_.intersperse([
 		"from",
 		<strong>{COUNTRIES[country[1]].name}</strong>
@@ -600,6 +611,12 @@ function FilterDescriptionElement(attrs) {
 	if (publishedUntil) generalCriteria.push(_.intersperse([
 		"until",
 		<strong><DateElement at={new Date(publishedUntil[1])} /></strong>
+	], " "))
+
+	var {text} = filters
+	if (text) generalCriteria.push(_.intersperse([
+		"matching",
+		<strong>{text[1]}</strong>
 	], " "))
 
 	var procedureType = filters["procedure-type"]
@@ -677,6 +694,7 @@ function FilterDescriptionElement(attrs) {
 		{order ? <Fragment>
 			{" "}sorted by <strong>{ORDER_NAMES[order[0]]}</strong>
 		</Fragment> : null}
+		.
 	</p>
 }
 

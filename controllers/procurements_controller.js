@@ -11,6 +11,7 @@ var sql = require("sqlate")
 var next = require("co-next")
 var {parseFilters} = require("root/lib/filtering")
 var {parseOrder} = require("root/lib/filtering")
+var {serializeFts} = require("root/lib/filtering")
 var ID_PATH = "/:country([A-Z][A-Z])::id"
 var COMPARATORS = require("root/lib/filtering").COMPARATOR_SQL
 var PAGE_SIZE = 500
@@ -18,6 +19,7 @@ exports.router = Router({mergeParams: true})
 exports.PAGE_SIZE = PAGE_SIZE
 
 var FILTERS = [
+	"text",
 	"country",
 	"published-since",
 	"published-until",
@@ -40,7 +42,8 @@ var ORDER_COLUMNS = {
 
 exports.router.get("/", next(function*(req, res) {
 	var filters = parseFilters(FILTERS, req.query)
-	var country = filters.country
+	var {text} = filters
+	var {country} = filters
 	var publishedSince = filters["published-since"]
 	var publishedUntil = filters["published-until"]
 	var bidderCount = filters["bidder-count"]
@@ -89,7 +92,13 @@ exports.router.get("/", next(function*(req, res) {
 				)) AS donations
 			` : sql``}
 
-		FROM procurements AS procurement
+		${text ? sql`
+			-- It's faster to have the FTS table in FROM than JOIN.
+			FROM procurements_fts AS fts
+			JOIN procurements AS procurement ON procurement.rowid = fts.rowid
+		` : sql`
+			FROM procurements AS procurement
+		`}
 
 		JOIN organizations AS buyer
 		ON buyer.country = procurement.buyer_country
@@ -165,7 +174,11 @@ exports.router.get("/", next(function*(req, res) {
 
 		WHERE 1 = 1
 
-		${country && country[1] ? sql`
+		${text ? sql`
+			AND fts MATCH ${serializeFts(text[1])}
+		` : sql``}
+
+		${country ? sql`
 			AND procurement.country = ${country[1]}
 		`: sql``}
 
@@ -206,7 +219,7 @@ exports.router.get("/", next(function*(req, res) {
 		${order ? sql`
 			ORDER BY ${ORDER_COLUMNS[order[0]]}
 			${order[1] == "asc" ? sql`ASC` : sql`DESC`}
-		`: sql``}
+		`: text ? sql`ORDER BY fts.rank` : sql``}
 
 		LIMIT ${limit}
 		OFFSET ${offset}
