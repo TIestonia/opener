@@ -4,6 +4,7 @@ var fetchDefaults = require("fetch-defaults")
 var {wait} = require("root/lib/promise")
 
 var request = require("fetch-off")
+request = require("fetch-parse")(request, {"text/html": true})
 request = require("root/lib/fetch/fetch_nodeify")(request)
 
 exports = module.exports = function() {

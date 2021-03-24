@@ -4,6 +4,8 @@ $page-width: 102rem;
 $page-padding: 4rem;
 $body-font: Lato, Helvetica, Arial, sans-serif;
 $ti-blue: #3695d8;
+$ti-dark-orange: #e77a31;
+$ti-purple: #d73771;
 $subtitle-grey: #878787;
 $heading-size: 2.4rem;
 $subheading-size: 2rem;
@@ -445,10 +447,6 @@ section.centered {
 
 		#cost-filter input { min-width: 10rem; }
 		#procedure-filter select { max-width: 20rem; }
-
-		#buyer-filter {
-			display: block;
-		}
 	}
 
 	#pagination {
@@ -554,9 +552,13 @@ section.centered {
 			margin-right: 20rem;
 
 			ul, li { display: inline; }
+
+			.seller-name.matched a { color: $ti-dark-orange; }
 		}
 
-		table {
+		.contract {
+			&.matched .seller-column a { color: $ti-dark-orange; }
+
 			.cost-column {
 				text-align: right;
 				font-weight: 600;

@@ -29,7 +29,8 @@ var FILTERS = [
 	"cost",
 	"procedure-type",
 	"political-party-donations",
-	"buyer"
+	"buyer",
+	"seller"
 ]
 
 var ORDER_COLUMNS = {
@@ -54,6 +55,7 @@ exports.router.get("/", next(function*(req, res) {
 	var {cost} = filters
 	var politicalPartyDonations = filters["political-party-donations"]
 	var {buyer} = filters
+	var {seller} = filters
 	var order = req.query.order ? parseOrder(req.query.order) : null
 	var limit = req.query.limit ? Number(req.query.limit) : PAGE_SIZE
 	var offset = req.query.offset ? Number(req.query.offset) : 0
@@ -78,6 +80,11 @@ exports.router.get("/", next(function*(req, res) {
 				'seller_country', contract.seller_country,
 				'seller_id', contract.seller_id,
 				'seller_name', seller.name
+
+				${seller ? sql`, 'seller_matched', (
+					contract.seller_country = filtered_seller_fts.country AND
+					contract.seller_id = filtered_seller_fts.id
+				)` : sql``}
 			)) AS contracts
 
 			${politicalPartyDonations ? sql`,
@@ -97,17 +104,28 @@ exports.router.get("/", next(function*(req, res) {
 		-- It seems faster to have the FTS table in FROM than JOIN.
 		${text ? sql`
 			FROM procurements_fts AS fts
-			JOIN procurements AS procurement ON procurement.rowid = fts.rowid
+			JOIN procurements AS procurement
 		` : buyer ? sql`
 			FROM organizations_fts AS buyer_fts
 			JOIN procurements AS procurement
-			ON procurement.buyer_country = buyer_fts.country
-			AND procurement.buyer_id = buyer_fts.id
+		` : seller ? sql`
+			FROM organizations_fts AS filtered_seller_fts
+			JOIN procurements AS procurement
 		` : sql`
 			FROM procurements AS procurement
 		`}
 
-		${text && buyer ? sql`JOIN organizations_fts AS buyer_fts` : sql``}
+		${buyer && text ? sql`JOIN organizations_fts AS buyer_fts` : sql``}
+
+		${seller && (text || buyer) ? sql`
+			JOIN organizations_fts AS filtered_seller_fts
+		` : sql``}
+
+		${seller ? sql`
+			JOIN procurement_contracts AS filtered_seller_contract
+			ON filtered_seller_contract.seller_country = filtered_seller_fts.country
+			AND filtered_seller_contract.seller_id = filtered_seller_fts.id
+		` : sql``}
 
 		JOIN organizations AS buyer
 		ON buyer.country = procurement.buyer_country
@@ -185,10 +203,19 @@ exports.router.get("/", next(function*(req, res) {
 
 		${text ? sql`
 			AND fts.procurements_fts MATCH ${serializeFts(text[1])}
+			AND procurement.rowid = fts.rowid
 		` : sql``}
 
 		${buyer ? sql`
 			AND buyer_fts.organizations_fts MATCH ${serializeFts(buyer[1])}
+			AND procurement.buyer_country = buyer_fts.country
+			AND procurement.buyer_id = buyer_fts.id
+		` : sql``}
+
+		${seller ? sql`
+			AND filtered_seller_fts.organizations_fts MATCH ${serializeFts(seller[1])}
+			AND procurement.country = filtered_seller_contract.procurement_country
+			AND procurement.id = filtered_seller_contract.procurement_id
 		` : sql``}
 
 		${country ? sql`

@@ -89,6 +89,7 @@ function IndexPage(attrs) {
 			/>
 
 			<ProcurementList
+				id="procurements"
 				path={path}
 				query={query}
 				order={order}
@@ -122,6 +123,7 @@ function ProcurementFiltersView(attrs) {
 	var procedureType = filters["procedure-type"]
 	var politicalPartyDonations = filters["political-party-donations"]
 	var {buyer} = filters
+	var {seller} = filters
 
 	var {order} = attrs
 	var orderName = order && order[0]
@@ -275,9 +277,16 @@ function ProcurementFiltersView(attrs) {
 					/> months before or after
 				</li>
 
+				<br />
+
 				<li class="filter" id="buyer-filter">
 					<label>Buyer name or registry code</label>
 					<input type="search" name="buyer" value={buyer && buyer[1]} />
+				</li>
+
+				<li class="filter" id="seller-filter">
+					<label>Seller name or registry code</label>
+					<input type="search" name="seller" value={seller && seller[1]} />
 				</li>
 			</ul>
 
@@ -334,7 +343,7 @@ function ProcurementList(attrs) {
 		? SortButton
 		: (_attrs, children) => <span class="column-name">{children}</span>
 
-	return <Table class="opener-procurements">
+	return <Table id={attrs.id} class="opener-procurements">
 		<thead>
 			<tr>
 				<th>
@@ -408,7 +417,8 @@ function ProcurementList(attrs) {
 			var sellers = _.uniqBy(contracts, "seller_name").map((contract) => ({
 				country: contract.seller_country,
 				id: contract.seller_id,
-				name: contract.seller_name
+				name: contract.seller_name,
+				matched: contract.seller_matched
 			}))
 
 			var contractsToggleId = _.uniqueId("contracts-toggle-")
@@ -504,7 +514,9 @@ function ProcurementList(attrs) {
 
 						<div class="summary">
 							{_.plural(contracts.length, "Contract", "Contracts")} awarded
-							to <ul>{sellers.map((seller, i) => <li>
+							to <ul>{sellers.map((seller, i) => <li
+							class={"seller-name" + (seller.matched ? " matched" : "")}
+						>
 								{seller.id ? <a
 									class="link-button"
 									href={Paths.organizationPath(seller)}
@@ -516,8 +528,10 @@ function ProcurementList(attrs) {
 							{" "}
 						</div>
 
-						<table>{contracts.map((contract) => <tr>
-							<td>{contract.seller_id ? <a
+						<table>{contracts.map((contract) => <tr
+							class={"contract" + (contract.seller_matched ? " matched" : "")}
+						>
+							<td class="seller-column">{contract.seller_id ? <a
 								class="link-button"
 								href={Paths.organizationPath({
 									country: contract.seller_country,
@@ -525,7 +539,7 @@ function ProcurementList(attrs) {
 								})}>{contract.seller_name}</a> : "Non-disclosed"}
 							</td>
 
-							<td>{contract.title} {contract.id}</td>
+							<td class="title-column">{contract.title} {contract.id}</td>
 
 							<td class="cost-column">
 								{contract.cost != null ? <MoneyElement
@@ -626,9 +640,15 @@ function FilterDescriptionElement(attrs) {
 	], " "))
 
 	var {buyer} = filters
-	if (buyer) generalCriteria.push(_.intersperse([
-		"with buyer",
+	if (buyer) attributeCriteria.push(_.intersperse([
+		"buyer",
 		<strong>{buyer[1]}</strong>
+	], " "))
+
+	var {seller} = filters
+	if (seller) attributeCriteria.push(_.intersperse([
+		"seller",
+		<strong>{seller[1]}</strong>
 	], " "))
 
 	var procedureType = filters["procedure-type"]

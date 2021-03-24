@@ -2,6 +2,9 @@ var _ = require("root/lib/underscore")
 
 module.exports = function(attrs) {
 	return _.assign({
+		country: "EE",
+		id: attrs && attrs.id || String(_.uniqueId()),
+		published_at: new Date,
 		bid_count: 0,
 		bidder_count: 0,
 		procedure_type: "open",
