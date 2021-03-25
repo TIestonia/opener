@@ -66,7 +66,7 @@ function IndexPage(attrs) {
 		</Header>
 
 		<Section>
-			<p class="intro-text">
+			<p id="intro-text" class="page-paragraph">
 				Here you can review and filter public procurements from <a href={path + "?country=EE"} class="example-filter-link">Estonia</a> and <a href={path + "?country=LV"} class="example-filter-link">Latvia</a> from 2018–2019. Try filtering for <a href={path + "?bidding-duration<14d&bidder-count=1"} class="example-filter-link">Single bidder procurements with brief bidding periods</a> or <a href={path + "?political-party-donations<=12"} class="example-filter-link">Contracts won before or after political donations</a>, or create your own below.
 			</p>
 		</Section>
@@ -707,7 +707,7 @@ function FilterDescriptionElement(attrs) {
 		], " "))
 	}
 
-	return <p class="filter-description">
+	return <p class="page-paragraph filter-description">
 		Procurements
 
 		{generalCriteria.length > 0 ? [

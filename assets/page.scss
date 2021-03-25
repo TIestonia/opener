@@ -57,6 +57,14 @@ section.centered {
 	& + * { margin-top: 1rem; }
 }
 
+.page-paragraph {
+	line-height: 1.5;
+
+	& + .opener-table-wrapper {
+		margin-top: 2rem;
+	}
+}
+
 .page-subheading {
 	font-size: $subheading-size;
 	font-weight: 600;
@@ -222,6 +230,8 @@ section.centered {
 .opener-filters {
 	#filters-toggle:checked + label,
 	#filters-toggle:not(:checked) ~ fieldset { display: none; }
+
+	label[for=filters-toggle] { line-height: 1.5; }
 
 	fieldset {
 		display: block;
@@ -418,7 +428,7 @@ section.centered {
 		margin-bottom: 1rem;
 	}
 
-	.intro-text {
+	#intro-text {
 		line-height: 1.7;
 
 		.example-filter-link {
@@ -428,12 +438,6 @@ section.centered {
 			background-color: $ti-blue;
 			color: white;
 			display: inline-block;
-		}
-	}
-
-	#procurements-section {
-		.filter-description {
-			line-height: 1.5;
 		}
 	}
 
@@ -780,7 +784,7 @@ section.centered {
 }
 
 #organizations-page main {
-	.intro-text {
+	#intro-text {
 		line-height: 1.7;
 
 		.example-filter-link {
@@ -790,12 +794,6 @@ section.centered {
 			background-color: $ti-blue;
 			color: white;
 			display: inline-block;
-		}
-	}
-
-	#organizations-section {
-		.filter-description {
-			line-height: 1.5;
 		}
 	}
 

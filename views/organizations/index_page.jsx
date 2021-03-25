@@ -50,7 +50,7 @@ module.exports = function(attrs) {
 		</Header>
 
 		<Section>
-			<p class="intro-text">
+			<p id="intro-text" class="page-paragraph">
 				Here's a list of all organizations that have either published procurements or won contracts. You can view organizations only from <a href={path + "?country=EE"} class="example-filter-link">Estonia</a> or <a href={path + "?country=LV"} class="example-filter-link">Latvia</a>, or create your own filter below.
 			</p>
 		</Section>

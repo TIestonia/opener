@@ -40,6 +40,11 @@ module.exports = function(attrs) {
 
 		{organizations.length > 0 ? <Section>
 			<Heading>Organizations</Heading>
+
+			<p class="page-paragraph">
+				Only organizations that have partaken in the Estonian or Latvian public procurement process are displayed.
+			</p>
+
 			<Table id="organizations">
 				<thead>
 					<th><span class="column-name">Name</span></th>
