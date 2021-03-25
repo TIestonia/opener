@@ -211,7 +211,7 @@ function OrganizationFiltersView(attrs) {
 				value={(orderDirection == "asc" ? "" : "-") + orderName}
 			/> : null}
 
-			<button type="submit">Filter Procurements</button>
+			<button type="submit">Filter Organizations</button>
 		</FiltersView>
 	</form>
 }
