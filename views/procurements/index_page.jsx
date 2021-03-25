@@ -162,6 +162,7 @@ function ProcurementFiltersView(attrs) {
 					<input
 						name="published-since"
 						type="date"
+						placeholder="YYYY-MM-DD"
 						pattern="\d\d\d\d-\d\d-\d\d"
 						value={publishedSince && publishedSince[1]}
 					/>
@@ -171,6 +172,7 @@ function ProcurementFiltersView(attrs) {
 					<input
 						name="published-until"
 						type="date"
+						placeholder="YYYY-MM-DD"
 						pattern="\d\d\d\d-\d\d-\d\d"
 						value={publishedUntil && publishedUntil[1]}
 					/>
