@@ -112,15 +112,14 @@ module.exports = function(attrs) {
 				</thead>
 
 				<tbody>{organizations.map(function(org) {
+					var orgPath = Paths.organizationPath(org)
 					var matchedRoles = _.sortBy(org.matched_roles, "started_at")
 
 					return <Fragment>
 						<tr class="organization">
 							<td>
 								<h3 class="name">
-									<a href={Paths.organizationPath(org)}>
-										{org.name}
-									</a>
+									<a href={orgPath}>{org.name}</a>
 								</h3>
 
 								<p class="country">
@@ -131,27 +130,37 @@ module.exports = function(attrs) {
 
 							<td class="procurements-column">
 								{org.procurement_count > 0 ? <Fragment>
-									<strong>
-										<MoneyElement currency="EUR" amount={org.procurements_cost} />
-									</strong>
+									<a href={orgPath + "#procurements-section"}>
+										<strong>
+											<MoneyElement
+												currency="EUR"
+												amount={org.procurements_cost}
+											/>
+										</strong>
 
-									<br />
-									{org.procurement_count}
-									{" "}
-									{_.plural(org.procurement_count, "procurement", "procurements")}
+										<br />
+										{org.procurement_count}
+										{" "}
+										{_.plural(org.procurement_count, "procurement", "procurements")}
+									</a>
 								</Fragment> : null}
 							</td>
 
 							<td class="contracts-column">
 								{org.contract_count > 0 ? <Fragment>
-									<strong>
-										<MoneyElement currency="EUR" amount={org.contracts_cost} />
-									</strong>
+									<a href={orgPath + "#contracts-section"}>
+										<strong>
+											<MoneyElement
+												currency="EUR"
+												amount={org.contracts_cost}
+											/>
+										</strong>
 
-									<br />
-									{org.contract_count}
-									{" "}
-									{_.plural(org.contract_count, "contract", "contracts")}
+										<br />
+										{org.contract_count}
+										{" "}
+										{_.plural(org.contract_count, "contract", "contracts")}
+									</a>
 								</Fragment> : null}
 							</td>
 						</tr>

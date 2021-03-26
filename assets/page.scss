@@ -829,6 +829,12 @@ section.centered {
 				}
 			}
 
+
+			.procurements-column,
+			.contracts-column {
+				a { @extend .hover-link-button; }
+			}
+
 			strong {
 				font-weight: bold;
 				color: black;
