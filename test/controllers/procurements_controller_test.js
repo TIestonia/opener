@@ -1,5 +1,5 @@
 var _ = require("root/lib/underscore")
-var Qs = require("qs")
+var Qs = require("querystring")
 var ValidOrganization = require("root/test/valid_organization")
 var ValidProcurement = require("root/test/valid_procurement")
 var ValidContract = require("root/test/valid_procurement_contract")

@@ -1,6 +1,6 @@
 /** @jsx Jsx */
 var _ = require("root/lib/underscore")
-var Qs = require("qs")
+var Qs = require("querystring")
 var Jsx = require("j6pack")
 var LIVERELOAD_PORT = process.env.LIVERELOAD_PORT || 35729
 var ENV = process.env.ENV
