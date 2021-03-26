@@ -12,9 +12,11 @@ var {MoneyElement} = Page
 var {FlagElement} = Page
 var {SortButton} = Page
 var {FiltersView} = Page
+var {DateElement} = Page
 var {serializeFiltersQuery} = require("root/lib/filtering")
 var COUNTRIES = require("root/lib/countries")
 var SUPPORTED_COUNTRIES = require("root/config").countries
+var ROLES = require("root/lib/procurement").ORGANIZATION_ROLES
 
 var ORDER_NAMES = {
 	name: "name",
@@ -110,46 +112,88 @@ module.exports = function(attrs) {
 				</thead>
 
 				<tbody>{organizations.map(function(org) {
-					return <tr class="organization">
-						<td>
-							<h3 class="name">
-								<a href={Paths.organizationPath(org)}>
-									{org.name}
-								</a>
-							</h3>
+					var matchedRoles = _.sortBy(org.matched_roles, "started_at")
 
-							<p class="country">
-								<FlagElement country={org.country} alt={false} />
-								{COUNTRIES[org.country].name}
-							</p>
-						</td>
+					return <Fragment>
+						<tr class="organization">
+							<td>
+								<h3 class="name">
+									<a href={Paths.organizationPath(org)}>
+										{org.name}
+									</a>
+								</h3>
 
-						<td class="procurements-column">
-							{org.procurement_count > 0 ? <Fragment>
-								<strong>
-									<MoneyElement currency="EUR" amount={org.procurements_cost} />
-								</strong>
+								<p class="country">
+									<FlagElement country={org.country} alt={false} />
+									{COUNTRIES[org.country].name}
+								</p>
+							</td>
 
-								<br />
-								{org.procurement_count}
-								{" "}
-								{_.plural(org.procurement_count, "procurement", "procurements")}
-							</Fragment> : null}
-						</td>
+							<td class="procurements-column">
+								{org.procurement_count > 0 ? <Fragment>
+									<strong>
+										<MoneyElement currency="EUR" amount={org.procurements_cost} />
+									</strong>
 
-						<td class="contracts-column">
-							{org.contract_count > 0 ? <Fragment>
-								<strong>
-									<MoneyElement currency="EUR" amount={org.contracts_cost} />
-								</strong>
+									<br />
+									{org.procurement_count}
+									{" "}
+									{_.plural(org.procurement_count, "procurement", "procurements")}
+								</Fragment> : null}
+							</td>
 
-								<br />
-								{org.contract_count}
-								{" "}
-								{_.plural(org.contract_count, "contract", "contracts")}
-							</Fragment> : null}
-						</td>
-					</tr>
+							<td class="contracts-column">
+								{org.contract_count > 0 ? <Fragment>
+									<strong>
+										<MoneyElement currency="EUR" amount={org.contracts_cost} />
+									</strong>
+
+									<br />
+									{org.contract_count}
+									{" "}
+									{_.plural(org.contract_count, "contract", "contracts")}
+								</Fragment> : null}
+							</td>
+						</tr>
+
+						{matchedRoles.length > 0 ? <tr class="organization-roles">
+							<td colspan="3">
+								<table>
+									<tbody>{matchedRoles.map(function(role) {
+										var personPath = Paths.personPath({
+											id: role.person_id,
+											country: role.person_country,
+											personal_id: role.person_personal_id
+										})
+
+										return <tr class="role matched">
+											<td class="person-column">
+												<a href={personPath} class="link-button">
+													{role.person_name}
+												</a>
+											</td>
+
+											<td class="from-column">
+												From
+												{" "}
+												<DateElement at={role.started_at} />
+											</td>
+
+											<td class="role-column">
+												{ROLES[role.role]}
+											</td>
+
+											<td class="until-column">{role.ended_at ? <Fragment>
+												Until
+												{" "}
+												<DateElement at={role.ended_at} />
+											</Fragment> : null}</td>
+										</tr>
+									})}</tbody>
+								</table>
+							</td>
+						</tr> : null}
+					</Fragment>
 				})}</tbody>
 			</Table>
 		</Section>
@@ -161,6 +205,8 @@ function OrganizationFiltersView(attrs) {
 	var {filters} = attrs
 	var {name} = filters
 	var {country} = filters
+	var {person} = filters
+
 	var {availableCountries} = attrs
 	availableCountries = _.sortBy(availableCountries, (id) => COUNTRIES[id].name)
 
@@ -203,6 +249,13 @@ function OrganizationFiltersView(attrs) {
 						</optgroup>
 					</select>
 				</li>
+
+				<br />
+
+				<li class="filter" id="person-filter">
+					<label>Associated with Person</label>
+					<input type="search" name="person" value={person && person[1]} />
+				</li>
 			</ul>
 
 			{order ? <input
@@ -236,7 +289,13 @@ function FilterDescriptionElement(attrs) {
 		<strong>{name[1]}</strong>
 	], " "))
 
-	return <p class="filter-description">
+	var {person} = filters
+	if (person) generalCriteria.push(_.intersperse([
+		"associated with",
+		<strong>{person[1]}</strong>
+	], " "))
+
+	return <p class="page-paragraph filter-description">
 		Organizations
 
 		{generalCriteria.length > 0 ? [

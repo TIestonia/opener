@@ -9,6 +9,9 @@ exports.delete = function*() {
 	yield sqlite(sql`DELETE FROM procurement_contracts`)
 	yield sqlite(sql`DELETE FROM procurements_fts`)
 	yield sqlite(sql`DELETE FROM procurements`)
+	yield sqlite(sql`DELETE FROM organization_people`)
 	yield sqlite(sql`DELETE FROM organizations_fts`)
 	yield sqlite(sql`DELETE FROM organizations`)
+	yield sqlite(sql`DELETE FROM people_fts`)
+	yield sqlite(sql`DELETE FROM people`)
 }

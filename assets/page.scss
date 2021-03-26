@@ -840,6 +840,20 @@ section.centered {
 				border-top: 1px solid #eee;
 			}
 		}
+
+		.organization-roles {
+			@extend .opener-table-subrow;
+
+			table { @extend .opener-table-subtable; }
+
+			.person-column { width: 30%; }
+			.from-column { width: 16%; }
+			.until-column { text-align: right; }
+
+			.role {
+				&.matched .person-column a { color: $ti-dark-orange; }
+			}
+		}
 	}
 }
 
@@ -919,8 +933,8 @@ section.centered {
 
 			table { @extend .opener-table-subtable; }
 
-			.from-column { width: 10rem; }
-			.until-column { width: 10rem; text-align: right; }
+			.from-column { width: 11rem; }
+			.until-column { width: 11rem; text-align: right; }
 		}
 
 		&.inactive-people {

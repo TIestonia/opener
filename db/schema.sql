@@ -225,6 +225,19 @@ CREATE TABLE IF NOT EXISTS 'organizations_fts_idx'(segid, term, pgno, PRIMARY KE
 CREATE TABLE IF NOT EXISTS 'organizations_fts_content'(id INTEGER PRIMARY KEY, c0, c1, c2);
 CREATE TABLE IF NOT EXISTS 'organizations_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB);
 CREATE TABLE IF NOT EXISTS 'organizations_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID;
+CREATE VIRTUAL TABLE people_fts USING fts5 (
+	country UNINDEXED,
+	personal_id,
+	name,
+
+	tokenize = "trigram case_sensitive 0"
+)
+/* people_fts(country,personal_id,name) */;
+CREATE TABLE IF NOT EXISTS 'people_fts_data'(id INTEGER PRIMARY KEY, block BLOB);
+CREATE TABLE IF NOT EXISTS 'people_fts_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS 'people_fts_content'(id INTEGER PRIMARY KEY, c0, c1, c2);
+CREATE TABLE IF NOT EXISTS 'people_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB);
+CREATE TABLE IF NOT EXISTS 'people_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID;
 
 PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
@@ -246,4 +259,5 @@ INSERT INTO migrations VALUES('20200928115120');
 INSERT INTO migrations VALUES('20200929163606');
 INSERT INTO migrations VALUES('20210320181634');
 INSERT INTO migrations VALUES('20210320181640');
+INSERT INTO migrations VALUES('20210320181650');
 COMMIT;

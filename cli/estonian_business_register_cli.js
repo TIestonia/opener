@@ -98,6 +98,9 @@ function* importOrganizations(orgId) {
 
 		console.warn("Imported %d organizations.", imported)
 	}
+
+	yield organizationsDb.reindex()
+	yield peopleDb.reindex()
 }
 
 function* reparseOrganizations(orgId) {
@@ -146,6 +149,9 @@ function* reparseOrganizations(orgId) {
 
 		console.warn("Reparsed %d organizations.", reparsed)
 	}
+
+	yield organizationsDb.reindex()
+	yield peopleDb.reindex()
 }
 
 function* importOrganization(org) {

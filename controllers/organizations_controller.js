@@ -17,7 +17,8 @@ exports.router = Router({mergeParams: true})
 
 var FILTERS = [
 	"name",
-	"country"
+	"country",
+	"person"
 ]
 
 var ORDER_COLUMNS = {
@@ -30,6 +31,7 @@ exports.router.get("/", next(function*(req, res) {
 	var filters = parseFilters(FILTERS, req.query)
 	var {name} = filters
 	var {country} = filters
+	var {person} = filters
 	var order = req.query.order ? parseOrder(req.query.order) : null
 
 	var organizationsCountries = _.map(yield sqlite(sql`
@@ -46,12 +48,30 @@ exports.router.get("/", next(function*(req, res) {
 			COALESCE(contracts.count, 0) AS contract_count,
 			COALESCE(contracts.cost, 0) AS contracts_cost
 
+			${person ? sql`,
+				json_group_array(DISTINCT json_object(
+					'person_id', person.id,
+					'person_country', person.country,
+					'person_personal_id', person.personal_id,
+					'person_name', person.name,
+					'role', role.role,
+					'started_at', role.started_at,
+					'ended_at', role.ended_at
+				)) AS matched_roles
+			` : sql``}
+
 		${name ? sql`
 			FROM organizations_fts AS fts
 			JOIN organizations AS org ON org.rowid = fts.rowid
 		` : sql`
 			FROM organizations AS org
 		`}
+
+		${person ? sql`
+			JOIN people_fts AS person_fts
+			JOIN organization_people AS role ON role.person_id = person_fts.rowid
+			JOIN people AS person ON person.id = person_fts.rowid
+		` : sql``}
 
 		LEFT JOIN (
 			SELECT
@@ -85,15 +105,29 @@ exports.router.get("/", next(function*(req, res) {
 			AND fts.organizations_fts MATCH ${serializeFts(name[1])}
 		` : sql``}
 
+		${person ? sql`
+			AND person_fts.people_fts MATCH ${serializeFts(person[1])}
+			AND org.country = role.organization_country
+			AND org.id = role.organization_id
+		` : sql``}
+
 		${country && country[1] ? sql`
 			AND org.country = ${country[1]}
 		`: sql``}
 
+		GROUP BY org.country, org.id
+
 		${order ? sql`
 			ORDER BY ${ORDER_COLUMNS[order[0]]}
 			${order[1] == "asc" ? sql`ASC` : sql`DESC`}
-		`: name ? sql`ORDER BY fts.rank` : sql`ORDER BY name ASC`}
+		`: name ? sql`ORDER BY fts.rank` : sql`ORDER BY org.name ASC`}
 	`)
+
+	organizations.forEach(function(org) {
+		org.matched_roles = org.matched_roles
+			? JSON.parse(org.matched_roles).map(orgPeopleDb.parse)
+			: []
+	})
 
 	res.render("organizations/index_page.jsx", {
 		organizationsCountries,
