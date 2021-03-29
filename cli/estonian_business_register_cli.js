@@ -14,7 +14,7 @@ var COUNTRY_CODES = require("root/lib/estonian_business_register_country_codes")
 var readOrganizationFromRegister =
 	require("root/lib/estonian_business_register_api").readOrganization
 var logger = require("root").logger
-var PERSONAL_ID_FORMAT = /^[123456]\d\d\d\d\d\d\d\d\d\d$/
+var ESTONIAN_PERSONAL_ID_FORMAT = /^[123456]\d\d\d\d\d\d\d\d\d\d$/
 exports = module.exports = cli
 exports.importOrganization = importOrganization
 
@@ -192,49 +192,99 @@ function* updateOrganization(org, info) {
 		var entry = entries[i]
 		var personCountry = null
 		var personalId = null
+		var personBirthdate = null
 
 		// AS Äripäev has a member of the supervisory board that's got an
 		// <isikukood_registrikood>, but which seems to be set to Sweden's personal
 		// id.
 		if (
 			entry.isikukood_registrikood &&
-			PERSONAL_ID_FORMAT.test(entry.isikukood_registrikood.$)
+			ESTONIAN_PERSONAL_ID_FORMAT.test(entry.isikukood_registrikood.$)
 		) {
 			personCountry = "EE"
 			personalId = entry.isikukood_registrikood.$
+			personBirthdate = _.birthdateFromEstonianPersonalId(personalId)
 		}
-		// Not all foreigners with a foreign country have a foreign code attached.
-		else if (entry.valis_kood && entry.valis_kood_riik) {
-			personCountry = COUNTRY_CODES[entry.valis_kood_riik.$]
+
+		// AS G4S Eesti has a chairman of the supervisory board (entry 2000150794)
+		// that only includes a foreign id, but no <valis_kood_riik>. The
+		// <aadress_riik> is set to Estonia, even though the personal id isn't
+		// Estonian. No birthdate to go with the personal id. The Latvian Register
+		// lists the person as Finnish.
+		//
+		// However there are far too many foreigners without <valis_kood_riik> to
+		// ignore them.
+		else if (
+			entry.valis_kood &&
+			(entry.valis_kood_riik || entry.aadress_riik)
+		) {
+			personCountry = COUNTRY_CODES[entry.valis_kood_riik
+				? entry.valis_kood_riik.$
+				: entry.aadress_riik.$
+			]
+
 			personalId = entry.valis_kood.$
+			personBirthdate = entry.synniaeg && parseRegisterDate(entry.synniaeg.$)
 		}
 
-		var name = entry.eesnimi.$ + " " + entry.nimi_arinimi.$
+		// OÜ Central Hotell has a supervisory board member (entry 9000415950) with
+		// no foreign id, but a name, birthdate and address.
+		//
+		// At the same time, the previous board member (entry 9000415949) has both
+		// <valis_kood_riik> and <aadress_riik>, but the <valis_kood_riik> seems
+		// incorrect. The Latvian Business Register lists the person's passport
+		// as issued by Norway rather than Denmark, which <valis_kood_riik> says.
+		//
+		// For now we're trusting the address over <valis_kood_riik>.
+		else if (
+			entry.synniaeg && (
+			entry.aadress_riik || entry.valis_kood_riik
+		)) {
+			if (
+				entry.aadress_riik && entry.valis_kood_riik &&
+				entry.aadress_riik.$ != entry.valis_kood_riik.$
+			) logger.warn(
+				"Mismatching foreign addresses: %s and %s",
+				entry.aadress_riik.$,
+				entry.valis_kood_riik.$
+			)
 
-		if (personalId == null) {
-			// AS G4S Eesti has a chairman of the supervisory board that only
-			// includes a foreign id, though with no country for context.
+			personCountry = COUNTRY_CODES[entry.aadress_riik
+				? entry.aadress_riik.$
+				: entry.valis_kood_riik.$
+			]
+
+			personalId = null
+			personBirthdate = parseRegisterDate(entry.synniaeg.$)
+		}
+
+		var personName = entry.eesnimi.$ + " " + entry.nimi_arinimi.$
+		var personNormalizedName = _.normalizeName(personName)
+
+		if (personalId == null && personBirthdate == null) {
 			var entryId = entry.kirje_id.$
-			logger.warn("Missing personal id for %s (entry %s).", name, entryId)
+			logger.warn("Missing personal id for %s (entry %s).", personName, entryId)
 			continue
 		}
 
 		var person = yield peopleDb.read(sql`
 			SELECT * FROM people
-			WHERE country = ${personCountry} AND personal_id = ${personalId}
+			WHERE (
+				country = ${personCountry} AND
+				personal_id = ${personalId})
+			OR (
+				country = ${personCountry} AND
+				normalized_name = ${_.normalizeName(personName)} AND
+				birthdate = ${_.formatIsoDate(personBirthdate)}
+			)
 		`)
 
 		if (person == null) person = yield peopleDb.create({
 			country: personCountry,
 			personal_id: personalId,
-			name: name,
-			normalized_name: _.normalizeName(name),
-
-			birthdate: (
-				personCountry == "EE" ? _.birthdateFromEstonianPersonalId(personalId) :
-				entry.synniaeg ? parseRegisterDate(entry.synniaeg.$) :
-				null
-			)
+			name: personName,
+			normalized_name: personNormalizedName,
+			birthdate: personBirthdate
 		})
 
 		yield orgPeopleDb.create({

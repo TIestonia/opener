@@ -55,7 +55,7 @@ describe("EstonianBusinessRegisterCli", function() {
 			})
 		})
 
-		it("must import board member", function*() {
+		it("must import Estonian board member", function*() {
 			var org = yield organizationsDb.create(new ValidOrganization({
 				country: "EE"
 			}))
@@ -115,11 +115,188 @@ describe("EstonianBusinessRegisterCli", function() {
 			}])
 		})
 
+		it("must import person with foreign personal id but only address",
+			function*() {
+			var org = yield organizationsDb.create(new ValidOrganization({
+				country: "EE"
+			}))
+
+			this.mitm.on("request", (_req, res) => respond(res, outdent`<reg:item>
+				<reg:ariregistri_kood>${org.id}</reg:ariregistri_kood>
+				<reg:nimi>Põhja-Eesti Regionaalhaigla</reg:nimi>
+
+				<reg:isikuandmed>
+					<reg:kaardile_kantud_isikud>
+						<reg:item>
+							<reg:isiku_tyyp>F</reg:isiku_tyyp>
+							<reg:isiku_roll>N</reg:isiku_roll>
+
+							<reg:eesnimi>John</reg:eesnimi>
+							<reg:nimi_arinimi>Smith</reg:nimi_arinimi>
+							<reg:valis_kood>31337-FAFF</reg:valis_kood>
+							<reg:aadress_riik>NOR</reg:aadress_riik>
+							<reg:algus_kpv>2015-06-18Z</reg:algus_kpv>
+						</reg:item>
+					</reg:kaardile_kantud_isikud>
+
+					<reg:kaardivalised_isikud />
+				</reg:isikuandmed>
+			</reg:item>`))
+
+			yield importOrganization(org)
+
+			var people = yield peopleDb.search(sql`SELECT * FROM people`)
+
+			people.must.eql([{
+				id: 1,
+				country: "NO",
+				personal_id: "31337-FAFF",
+				name: "John Smith",
+				normalized_name: "john smith",
+				birthdate: null
+
+			}])
+
+			var orgPeople = yield orgPeopleDb.search(sql`
+				SELECT * FROM organization_people
+			`)
+
+			orgPeople.must.eql([{
+				organization_country: "EE",
+				organization_id: org.id,
+				person_id: 1,
+				person_country: "NO",
+				person_personal_id: "31337-FAFF",
+				person_birthdate: null,
+				role: "supervisory_board_member",
+				started_at: new Date(2015, 5, 18),
+				ended_at: null
+			}])
+		})
+
+		it("must import person with birthdate and address", function*() {
+			var org = yield organizationsDb.create(new ValidOrganization({
+				country: "EE"
+			}))
+
+			this.mitm.on("request", (_req, res) => respond(res, outdent`<reg:item>
+				<reg:ariregistri_kood>${org.id}</reg:ariregistri_kood>
+				<reg:nimi>Põhja-Eesti Regionaalhaigla</reg:nimi>
+
+				<reg:isikuandmed>
+					<reg:kaardile_kantud_isikud>
+						<reg:item>
+							<reg:isiku_tyyp>F</reg:isiku_tyyp>
+							<reg:isiku_roll>N</reg:isiku_roll>
+
+							<reg:eesnimi>John</reg:eesnimi>
+							<reg:nimi_arinimi>Smith</reg:nimi_arinimi>
+							<reg:synniaeg>1987-06-18Z</reg:synniaeg>
+							<reg:aadress_riik>NOR</reg:aadress_riik>
+							<reg:algus_kpv>2015-06-18Z</reg:algus_kpv>
+						</reg:item>
+					</reg:kaardile_kantud_isikud>
+
+					<reg:kaardivalised_isikud />
+				</reg:isikuandmed>
+			</reg:item>`))
+
+			yield importOrganization(org)
+
+			var people = yield peopleDb.search(sql`SELECT * FROM people`)
+
+			people.must.eql([{
+				id: 1,
+				country: "NO",
+				personal_id: null,
+				name: "John Smith",
+				normalized_name: "john smith",
+				birthdate: new Date(1987, 5, 18)
+
+			}])
+
+			var orgPeople = yield orgPeopleDb.search(sql`
+				SELECT * FROM organization_people
+			`)
+
+			orgPeople.must.eql([{
+				organization_country: "EE",
+				organization_id: org.id,
+				person_id: 1,
+				person_country: "NO",
+				person_personal_id: null,
+				person_birthdate: new Date(1987, 5, 18),
+				role: "supervisory_board_member",
+				started_at: new Date(2015, 5, 18),
+				ended_at: null
+			}])
+		})
+
+		it("must import person with birthdate and foreign code address",
+			function*() {
+			var org = yield organizationsDb.create(new ValidOrganization({
+				country: "EE"
+			}))
+
+			this.mitm.on("request", (_req, res) => respond(res, outdent`<reg:item>
+				<reg:ariregistri_kood>${org.id}</reg:ariregistri_kood>
+				<reg:nimi>Põhja-Eesti Regionaalhaigla</reg:nimi>
+
+				<reg:isikuandmed>
+					<reg:kaardile_kantud_isikud>
+						<reg:item>
+							<reg:isiku_tyyp>F</reg:isiku_tyyp>
+							<reg:isiku_roll>N</reg:isiku_roll>
+
+							<reg:eesnimi>John</reg:eesnimi>
+							<reg:nimi_arinimi>Smith</reg:nimi_arinimi>
+							<reg:synniaeg>1987-06-18Z</reg:synniaeg>
+							<reg:valis_kood_riik>NOR</reg:valis_kood_riik>
+							<reg:algus_kpv>2015-06-18Z</reg:algus_kpv>
+						</reg:item>
+					</reg:kaardile_kantud_isikud>
+
+					<reg:kaardivalised_isikud />
+				</reg:isikuandmed>
+			</reg:item>`))
+
+			yield importOrganization(org)
+
+			var people = yield peopleDb.search(sql`SELECT * FROM people`)
+
+			people.must.eql([{
+				id: 1,
+				country: "NO",
+				personal_id: null,
+				name: "John Smith",
+				normalized_name: "john smith",
+				birthdate: new Date(1987, 5, 18)
+
+			}])
+
+			var orgPeople = yield orgPeopleDb.search(sql`
+				SELECT * FROM organization_people
+			`)
+
+			orgPeople.must.eql([{
+				organization_country: "EE",
+				organization_id: org.id,
+				person_id: 1,
+				person_country: "NO",
+				person_personal_id: null,
+				person_birthdate: new Date(1987, 5, 18),
+				role: "supervisory_board_member",
+				started_at: new Date(2015, 5, 18),
+				ended_at: null
+			}])
+		})
+
 		// Noticed a bug on Mar 25, 2021 that associated roles of people with no
-		// personal ids with a previous person. The issue arose from not
+		// personal ids with the previous person. The issue arose from not
 		// clearing a variable in a loop that was hoisted out of the scope of the
 		// for-loop.
-		it("must ignore person with no personal id", function*() {
+		it("must import person with no personal id after one that had",
+			function*() {
 			var org = yield organizationsDb.create(new ValidOrganization({
 				country: "EE"
 			}))
