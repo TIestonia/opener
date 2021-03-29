@@ -203,17 +203,15 @@ function* updateOrganization(org, entity) {
 
 	for (var i = 0; i < officers.length; ++i) {
 		var officer = officers[i]
-
-		if (officer.naturalPerson)
 		var personName = parseName(officer.naturalPerson)
 		var personNormalizedName = _.normalizeName(personName)
 
 		// Not all people have a country set. For example 90009235333 lists
 		// a single officer with a latvianIdentityNumber, forename and surname, but
 		// no country.
-		var personCountry
-		var personalId
-		var personBirthdate
+		var personCountry = null
+		var personalId = null
+		var personBirthdate = null
 
 		// The Latvian identity number is also on some people whose country is not
 		// LV. Perhaps people not originally from Latvia? Foreigners lack the
@@ -231,9 +229,9 @@ function* updateOrganization(org, entity) {
 				: _.birthdateFromLatvianPersonalId(personalId)
 		}
 		else if (officer.naturalPerson.birthDate) {
+			personCountry = officer.naturalPerson.country
 			personalId = null
 			personBirthdate = _.parseIsoDate(officer.naturalPerson.birthDate)
-			personCountry = officer.naturalPerson.country
 		}
 		else {
 			console.warn(`Missing personal id or birth date for %s.`, personName)
