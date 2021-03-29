@@ -147,7 +147,7 @@ function* importProcurementsOcds(path) {
 		if (obj.awards) for (var i = 0; i < obj.awards.length; ++i) {
 			var contractObj = obj.awards[i]
 			var lot = lotsById[contractObj.relatedLots[0]]
-			var seller
+			var seller = null
 
 			if (contractObj.suppliers) {
 				if (contractObj.suppliers.length > 1)
