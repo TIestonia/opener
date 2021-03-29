@@ -2,6 +2,13 @@ var Fs = require("fs")
 var lazy = require("lazy-object").defineLazyProperty
 var ENV = process.env.ENV
 
+lazy(exports, "logger", function() {
+  switch (ENV) {
+		case "test": return require("root/lib/null_logger")
+		default: return console
+  }
+})
+
 lazy(exports, "sqlite", function() {
 	var connect = require("root/lib/sqlite")
 

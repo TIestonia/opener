@@ -1,5 +1,4 @@
 var _ = require("root/lib/underscore")
-var Config = require("root/config")
 var Neodoc = require("neodoc")
 var DateFns = require("date-fns")
 var RegisterXml = require("root/lib/estonian_business_register_xml")
@@ -11,10 +10,13 @@ var peopleDb = require("root/db/people_db")
 var sql = require("sqlate")
 var concat = Array.prototype.concat.bind(Array.prototype)
 var assert = require("assert")
-var fetch = require("fetch-off")
-var URL = "https://ariregxmlv6.rik.ee"
 var COUNTRY_CODES = require("root/lib/estonian_business_register_country_codes")
+var readOrganizationFromRegister =
+	require("root/lib/estonian_business_register_api").readOrganization
+var logger = require("root").logger
 var PERSONAL_ID_FORMAT = /^[123456]\d\d\d\d\d\d\d\d\d\d$/
+exports = module.exports = cli
+exports.importOrganization = importOrganization
 
 var USAGE_TEXT = `
 Usage: cli estonian-business-register (-h | --help)
@@ -33,15 +35,7 @@ var IRRELEVALT_ROLES = [
 	"PANKR" // Trustee in bankruptcy
 ]
 
-var api = require("fetch-defaults")(fetch, URL, {
-	timeout: 10000,
-	headers: {Accept: "application/soap+xml"}
-})
-
-api = require("fetch-parse")(api, {xml: true})
-api = require("fetch-throw")(api)
-
-module.exports = function*(argv) {
+function* cli(argv) {
   var args = Neodoc.run(USAGE_TEXT, {argv: argv || ["import"]})
   if (args["--help"]) return void process.stdout.write(USAGE_TEXT.trimLeft())
 
@@ -55,18 +49,18 @@ module.exports = function*(argv) {
 
 function* importOrganizations(orgId) {
 	if (orgId != null) {
-		var org = yield organizationsDb.read(sql`
+		let org = yield organizationsDb.read(sql`
 			SELECT * FROM organizations
 			WHERE country = 'EE' AND id = ${orgId}
 		`)
 
 		if (org == null) {
-			console.warn("Organization not related to procurements: " + orgId)
+			logger.warn("Organization not related to procurements: " + orgId)
 			process.exit(1)
 		}
 
 		if (org.business_register_data != null) {
-			console.warn("Already imported data from the business register.")
+			logger.warn("Already imported data from the business register.")
 			process.exit(2)
 		}
 
@@ -87,16 +81,16 @@ function* importOrganizations(orgId) {
 			for (var i = 0; i < orgs.length; ++i) {
 				let org = orgs[i]
 				yield sqlite(sql`BEGIN`)
-				console.warn("Importing %s (%s)…", org.id, org.name)
+				logger.warn("Importing %s (%s)…", org.id, org.name)
 				yield importOrganization(org)
 				yield sqlite(sql`COMMIT`)
 
 				if ((++imported % 100) == 0)
-					console.warn("Imported %d organizations.", imported)
+					logger.warn("Imported %d organizations.", imported)
 			}
 		}
 
-		console.warn("Imported %d organizations.", imported)
+		logger.warn("Imported %d organizations.", imported)
 	}
 
 	yield organizationsDb.reindex()
@@ -105,18 +99,18 @@ function* importOrganizations(orgId) {
 
 function* reparseOrganizations(orgId) {
 	if (orgId != null) {
-		var org = yield organizationsDb.read(sql`
+		let org = yield organizationsDb.read(sql`
 			SELECT * FROM organizations
 			WHERE country = 'EE' AND id = ${orgId}
 		`)
 
 		if (org == null) {
-			console.warn("Organization not related to procurements: " + orgId)
+			logger.warn("Organization not related to procurements: " + orgId)
 			process.exit(1)
 		}
 
 		yield sqlite(sql`BEGIN`)
-		var info = RegisterXml.parse(org.business_register_data).item
+		let info = RegisterXml.parse(org.business_register_data).item
 		yield updateOrganization(org, info)
 		yield sqlite(sql`COMMIT`)
 	}
@@ -136,18 +130,18 @@ function* reparseOrganizations(orgId) {
 			for (var i = 0; i < orgs.length; ++i) {
 				let org = orgs[i]
 
-				console.warn("Reparsing %s (%s)…", org.id, org.name)
+				logger.warn("Reparsing %s (%s)…", org.id, org.name)
 				let info = RegisterXml.parse(org.business_register_data).item
 				yield updateOrganization(org, info)
 
 				if ((++reparsed % 100) == 0)
-					console.warn("Reparsed %d organizations.", reparsed)
+					logger.warn("Reparsed %d organizations.", reparsed)
 			}
 
 			yield sqlite(sql`COMMIT`)
 		}
 
-		console.warn("Reparsed %d organizations.", reparsed)
+		logger.warn("Reparsed %d organizations.", reparsed)
 	}
 
 	yield organizationsDb.reindex()
@@ -196,7 +190,8 @@ function* updateOrganization(org, info) {
 
 	for (var i = 0; i < entries.length; ++i) {
 		var entry = entries[i]
-		var personCountry, personalId
+		var personCountry = null
+		var personalId = null
 
 		// AS Äripäev has a member of the supervisory board that's got an
 		// <isikukood_registrikood>, but which seems to be set to Sweden's personal
@@ -220,7 +215,7 @@ function* updateOrganization(org, info) {
 			// AS G4S Eesti has a chairman of the supervisory board that only
 			// includes a foreign id, though with no country for context.
 			var entryId = entry.kirje_id.$
-			console.warn("Missing personal id for %s (entry %s).", name, entryId)
+			logger.warn("Missing personal id for %s (entry %s).", name, entryId)
 			continue
 		}
 
@@ -260,50 +255,6 @@ function* updateOrganization(org, info) {
 			role: parseRole(entry.isiku_roll.$)
 		})
 	}
-}
-
-function readOrganizationFromRegister(code) {
-	return api("/", {
-		method: "POST",
-		headers: {"Content-Type": "application/soap+xml"},
-
-		body: `<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/">
-			<Header/>
-
-			<Body xmlns:reg="http://arireg.x-road.eu/producer/">
-				<reg:detailandmed_v3>
-					<reg:keha>
-						<reg:ariregister_kasutajanimi>
-							${Config.estonianBusinessRegisterUser}
-						</reg:ariregister_kasutajanimi>
-
-						<reg:ariregister_parool>
-							${Config.estonianBusinessRegisterPassword}
-						</reg:ariregister_parool>
-
-						<reg:ariregistri_kood>${code}</reg:ariregistri_kood>
-
-						<reg:ariregister_valjundi_formaat>
-							xml
-						</reg:ariregister_valjundi_formaat>
-
-						<reg:yandmed>true</reg:yandmed>
-						<reg:iandmed>true</reg:iandmed>
-						<reg:kandmed>false</reg:kandmed>
-						<reg:dandmed>false</reg:dandmed>
-						<reg:maarused>false</reg:maarused>
-						<reg:keel>eng</reg:keel>
-					</reg:keha>
-				</reg:detailandmed_v3>
-			</Body>
-		</Envelope>`
-	}).then(function(res) {
-		// The register responds with an empty <ettevotjad> tag but no <item> if
-		// not found.
-		var soap = RegisterXml.parse(res.body).soap$Envelope.soap$Body
-		var orgs = soap.detailandmed_v3Response.keha.ettevotjad.item || null
-		return orgs || (orgs instanceof Array ? orgs[0].item : orgs.item)
-	})
 }
 
 // Values come from klassifikaatorid_v1 response.
@@ -355,6 +306,6 @@ function parseRole(estonianRole) {
 function parseRegisterDate(date) {
 	// For some reason dates in the register XML have a "Z" suffix. That doesn't
 	// make sense as time zoned dates seldom make sense and especially not in UTC
-	// for datas pertaining to Estonian organizations.
+	// for dates pertaining to Estonian organizations.
 	return _.parseIsoDate(date.replace(/Z$/, ""))
 }
