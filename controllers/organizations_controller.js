@@ -13,6 +13,7 @@ var {parseFilters} = require("root/lib/filtering")
 var {parseOrder} = require("root/lib/filtering")
 var {serializeFts} = require("root/lib/filtering")
 var sqlite = require("root").sqlite
+var PAGE_SIZE = 200
 exports.router = Router({mergeParams: true})
 
 var FILTERS = [
@@ -33,6 +34,8 @@ exports.router.get("/", next(function*(req, res) {
 	var {country} = filters
 	var {person} = filters
 	var order = req.query.order ? parseOrder(req.query.order) : null
+	var limit = req.query.limit ? Number(req.query.limit) : PAGE_SIZE
+	var offset = req.query.offset ? Number(req.query.offset) : 0
 
 	var organizationsCountries = _.map(yield sqlite(sql`
 		SELECT DISTINCT country FROM organizations
@@ -46,7 +49,8 @@ exports.router.get("/", next(function*(req, res) {
 			COALESCE(procurements.count, 0) AS procurement_count,
 			COALESCE(procurements.cost, 0) AS procurements_cost,
 			COALESCE(contracts.count, 0) AS contract_count,
-			COALESCE(contracts.cost, 0) AS contracts_cost
+			COALESCE(contracts.cost, 0) AS contracts_cost,
+			COUNT(org.id) OVER () AS of
 
 			${person ? sql`,
 				json_group_array(DISTINCT json_object(
@@ -121,6 +125,9 @@ exports.router.get("/", next(function*(req, res) {
 			ORDER BY ${ORDER_COLUMNS[order[0]]}
 			${order[1] == "asc" ? sql`ASC` : sql`DESC`}
 		`: name ? sql`ORDER BY fts.rank` : sql`ORDER BY org.name ASC`}
+
+		LIMIT ${limit}
+		OFFSET ${offset}
 	`)
 
 	organizations.forEach(function(org) {
@@ -133,7 +140,9 @@ exports.router.get("/", next(function*(req, res) {
 		organizationsCountries,
 		organizations,
 		filters,
-		order
+		order,
+		limit,
+		offset
 	})
 }))
 

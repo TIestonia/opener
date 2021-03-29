@@ -13,6 +13,7 @@ var {FlagElement} = Page
 var {SortButton} = Page
 var {FiltersView} = Page
 var {DateElement} = Page
+var {PaginationView} = Page
 var {serializeFiltersQuery} = require("root/lib/filtering")
 var COUNTRIES = require("root/lib/countries")
 var SUPPORTED_COUNTRIES = require("root/config").countries
@@ -32,6 +33,9 @@ module.exports = function(attrs) {
 	var {order} = attrs
 	var orderName = order && order[0]
 	var orderDirection = order && order[1]
+	var organizationsTotalCount = organizations[0] && organizations[0].of || 0
+	var {limit} = attrs
+	var {offset} = attrs
 
 	// Don't reflect the default order in the query to properly default to
 	// ordering by rank when searching by name.
@@ -59,9 +63,9 @@ module.exports = function(attrs) {
 
 		<Section id="organizations-section">
 			<Heading>
-				Found {organizations.length}
+				Found {organizationsTotalCount}
 				{" "}
-				{_.plural(organizations.length, "organization", "organizations")}
+				{_.plural(organizationsTotalCount, "organization", "organizations")}
 			</Heading>
 
 			{!_.isEmpty(filters) ?
@@ -205,6 +209,14 @@ module.exports = function(attrs) {
 					</Fragment>
 				})}</tbody>
 			</Table>
+
+			{organizationsTotalCount > 0 ? <PaginationView
+				total={organizationsTotalCount}
+				index={offset}
+				pageSize={limit}
+				path={path}
+				query={query}
+			/> : null}
 		</Section>
 	</Page>
 }

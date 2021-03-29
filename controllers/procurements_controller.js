@@ -16,7 +16,6 @@ var ID_PATH = "/:country([A-Z][A-Z])::id"
 var COMPARATORS = require("root/lib/filtering").COMPARATOR_SQL
 var PAGE_SIZE = 500
 exports.router = Router({mergeParams: true})
-exports.PAGE_SIZE = PAGE_SIZE
 
 var FILTERS = [
 	"text",

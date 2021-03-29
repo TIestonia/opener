@@ -1,6 +1,5 @@
 /** @jsx Jsx */
 var _ = require("root/lib/underscore")
-var Qs = require("querystring")
 var Jsx = require("j6pack")
 var {Fragment} = Jsx
 var Page = require("../page")
@@ -14,15 +13,14 @@ var {MoneyElement} = Page
 var {FlagElement} = Page
 var {SortButton} = Page
 var {FiltersView} = Page
+var {PaginationView} = Page
 var {serializeFiltersQuery} = require("root/lib/filtering")
 var {suffixComparator} = require("root/lib/filtering")
 var diffInDays = require("date-fns").differenceInCalendarDays
-var concat = Array.prototype.concat.bind(Array.prototype)
 var {PROCEDURE_TYPES} = require("root/lib/procurement")
 var COUNTRIES = require("root/lib/countries")
 var ROLES = require("root/lib/procurement").ORGANIZATION_ROLES
 var SUPPORTED_COUNTRIES = require("root/config").countries
-var {PAGE_SIZE} = require("root/controllers/procurements_controller")
 var COMPARATOR_OPTIONS = new Set([null, "<", "<=", "=", ">=", ">"])
 exports = module.exports = IndexPage
 exports.ProcurementList = ProcurementList
@@ -50,6 +48,7 @@ function IndexPage(attrs) {
 	var procurementsTotalCount = procurements[0] && procurements[0].of || 0
 	var {filters} = attrs
 	var {order} = attrs
+	var {limit} = attrs
 	var {offset} = attrs
 
 	var path = req.baseUrl
@@ -98,10 +97,10 @@ function IndexPage(attrs) {
 				sortable
 			/>
 
-			{procurementsTotalCount > 0 ? <Pagination
+			{procurementsTotalCount > 0 ? <PaginationView
 				total={procurementsTotalCount}
 				index={offset}
-				pageSize={PAGE_SIZE}
+				pageSize={limit}
 				path={path}
 				query={query}
 			/> : null}
@@ -732,35 +731,3 @@ function FilterDescriptionElement(attrs) {
 	</p>
 }
 
-function Pagination(attrs) {
-	var {total} = attrs
-	var {index} = attrs
-	var {pageSize} = attrs
-	var {path} = attrs
-	var {query} = attrs
-
-	var pages = _.times(Math.ceil(total / pageSize), _.id)
-	var currentPage = Math.floor(index / pageSize)
-	var isAtEnd = currentPage < 3 || currentPage >= pages.length - 3
-
-	var pageGroups = pages.length <= 10 ? [pages] : _.groupAdjacent(_.uniq(concat(
-		pages.slice(0, isAtEnd ? 5 : 3),
-		pages.slice(Math.max(currentPage - 2, 0), currentPage + 3),
-		pages.slice(isAtEnd ? -5 : -3)
-	).sort(_.sub)), (a, b) => a + 1 == b)
-
-	return <ol id="pagination">
-		{_.intersperse(pageGroups.map((pages) => pages.map(function(page) {
-			var url = path + "?" + Qs.stringify(_.assign({}, query, {
-				offset: page * pageSize
-			}))
-
-			var isCurrent = page == currentPage
-
-			return <li class={isCurrent ? "page current" : "page"}>
-				<a href={isCurrent ? "#" : url}>{page + 1}</a>
-			</li>
-			})
-		), <li class="middle">…</li>)}
-	</ol>
-}

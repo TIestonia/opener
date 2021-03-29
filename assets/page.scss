@@ -452,43 +452,6 @@ section.centered {
 		#cost-filter input { min-width: 10rem; }
 		#procedure-filter select { max-width: 20rem; }
 	}
-
-	#pagination {
-		max-width: 60rem;
-		margin: 0 auto;
-		margin-top: 2rem;
-		text-align: center;
-		
-		li {
-			color: #303030;
-			display: inline-block;
-			margin-bottom: 1rem;
-
-			&.page {
-				background: $table-header-background;
-				border-radius: 0.3rem;
-			}
-
-			a {
-				display: inline-block;
-				padding: 1rem 1rem;
-			}
-
-			&:not(.current) a {
-				@extend .hover-link-button;
-			}
-
-			&.current {
-				color: black;
-				background: white;
-				font-weight: bold;
-			}
-
-			& + li {
-				margin-left: 1rem;
-			}
-		}
-	}
 }
 
 .opener-procurements {
@@ -578,6 +541,42 @@ section.centered {
 		.amount-column {
 			text-align: right;
 			font-weight: 600;
+		}
+	}
+}
+
+.opener-pagination {
+	max-width: 60rem;
+	margin: 2rem auto 0;
+	text-align: center;
+	
+	li {
+		color: #303030;
+		display: inline-block;
+		margin-bottom: 1rem;
+
+		&.page {
+			background: $table-header-background;
+			border-radius: 0.3rem;
+		}
+
+		a {
+			display: inline-block;
+			padding: 1rem 1rem;
+		}
+
+		&:not(.current) a {
+			@extend .hover-link-button;
+		}
+
+		&.current {
+			color: black;
+			background: white;
+			font-weight: bold;
+		}
+
+		& + li {
+			margin-left: 1rem;
 		}
 	}
 }

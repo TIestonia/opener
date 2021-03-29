@@ -7,6 +7,7 @@ var ENV = process.env.ENV
 var COUNTRIES = require("root/lib/countries")
 var {javascript} = require("root/lib/jsx")
 var {COMPARATOR_SUFFIXES} = require("root/lib/filtering")
+var concat = Array.prototype.concat.bind(Array.prototype)
 exports = module.exports = Page
 exports.Header = Header
 exports.Section = Section
@@ -19,6 +20,7 @@ exports.MoneyElement = MoneyElement
 exports.FlagElement = FlagElement
 exports.SortButton = SortButton
 exports.FiltersView = FiltersView
+exports.PaginationView = PaginationView
 
 function Page(attrs, children) {
 	var req = attrs.req
@@ -174,6 +176,39 @@ function FiltersView(_attrs, children) {
 			}
 		})()`}</script>
 	</div>
+}
+
+function PaginationView(attrs) {
+	var {total} = attrs
+	var {index} = attrs
+	var {pageSize} = attrs
+	var {path} = attrs
+	var {query} = attrs
+
+	var pages = _.times(Math.ceil(total / pageSize), _.id)
+	var currentPage = Math.floor(index / pageSize)
+	var isAtEnd = currentPage < 3 || currentPage >= pages.length - 3
+
+	var pageGroups = pages.length <= 10 ? [pages] : _.groupAdjacent(_.uniq(concat(
+		pages.slice(0, isAtEnd ? 5 : 3),
+		pages.slice(Math.max(currentPage - 2, 0), currentPage + 3),
+		pages.slice(isAtEnd ? -5 : -3)
+	).sort(_.sub)), (a, b) => a + 1 == b)
+
+	return <ol class="opener-pagination">
+		{_.intersperse(pageGroups.map((pages) => pages.map(function(page) {
+			var url = path + "?" + Qs.stringify(_.assign({}, query, {
+				offset: page * pageSize
+			}))
+
+			var isCurrent = page == currentPage
+
+			return <li class={isCurrent ? "page current" : "page"}>
+				<a href={isCurrent ? "#" : url}>{page + 1}</a>
+			</li>
+			})
+		), <li class="middle">…</li>)}
+	</ol>
 }
 
 function LiveReload(attrs) {
