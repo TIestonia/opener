@@ -28,7 +28,7 @@ CREATE TABLE procurements (
 	cost_currency TEXT,
 	bidder_count INTEGER NOT NULL DEFAULT 0,
 	bid_count INTEGER NOT NULL DEFAULT 0,
-	dispute_count INTEGER NOT NULL DEFAULT 0,
+	dispute_count INTEGER NOT NULL DEFAULT 0, origin TEXT NOT NULL,
 
 	PRIMARY KEY (country, id),
 	FOREIGN KEY (buyer_country, buyer_id) REFERENCES organizations (country, id),
@@ -260,4 +260,5 @@ INSERT INTO migrations VALUES('20200929163606');
 INSERT INTO migrations VALUES('20210320181634');
 INSERT INTO migrations VALUES('20210320181640');
 INSERT INTO migrations VALUES('20210320181650');
+INSERT INTO migrations VALUES('20210528123030');
 COMMIT;

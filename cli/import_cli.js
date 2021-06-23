@@ -112,6 +112,7 @@ function* importProcurementsOcds(path) {
 				title: tenderObj.title,
 				description: tenderObj.description,
 				buyer_country: buyer.country,
+				origin: "ocds",
 
 				procedure_type: (
 					tenderObj.procurementMethod &&
@@ -226,6 +227,7 @@ function* importProcurementsCsv(path) {
 			country: "EE",
 			id: obj.viitenumber,
 			procedure_type: parseProcurementEstonianProcedureType(obj.menliik_kood),
+			origin: "csv",
 			title: obj.nimetus,
 			buyer_country: buyer.country,
 			buyer_id: buyer.id,

@@ -82,6 +82,7 @@ describe("Ted", function() {
 				procurements.must.eql([new ValidProcurement({
 					country: "EE",
 					id: "203245",
+					origin: "ted",
 					buyer_country: buyers[0].country,
 					buyer_id: buyers[0].id,
 					title: "Pärnu jahtklubi statsionaarse tõstekraana soetamine",
@@ -192,6 +193,7 @@ describe("Ted", function() {
 				procurements.must.eql([new ValidProcurement({
 					country: "EE",
 					id: "213798",
+					origin: "ted",
 					buyer_country: orgs[0].country,
 					buyer_id: orgs[0].id,
 					title: "Narva-Jõesuu linnas asuva muuli eeluuringute koostamine",
@@ -283,6 +285,7 @@ describe("Ted", function() {
 				procurements.must.eql([new ValidProcurement({
 					country: "EE",
 					id: "213798",
+					origin: "ted",
 					buyer_country: orgs[0].country,
 					buyer_id: orgs[0].id,
 					title: CONTRACT_TITLE,
@@ -369,6 +372,7 @@ describe("Ted", function() {
 				procurements.must.eql([new ValidProcurement({
 					country: "EE",
 					id: "204622",
+					origin: "ted",
 					buyer_country: orgs[0].country,
 					buyer_id: orgs[0].id,
 					title: "Iru elektrijaama komplektalajaam",
@@ -483,6 +487,7 @@ describe("Ted", function() {
 				procurements.must.eql([new ValidProcurement({
 					country: "EE",
 					id: "204622",
+					origin: "ted",
 					buyer_country: orgs[0].country,
 					buyer_id: orgs[0].id,
 					title: "Piimatoodete ostmine",

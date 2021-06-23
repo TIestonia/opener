@@ -4,6 +4,7 @@ module.exports = function(attrs) {
 	return _.assign({
 		country: "EE",
 		id: attrs && attrs.id || String(_.uniqueId()),
+		origin: "csv",
 		published_at: new Date,
 		bid_count: 0,
 		bidder_count: 0,
