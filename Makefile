@@ -93,10 +93,16 @@ db/migration: NAME = $(error "Please set NAME.")
 db/migration:
 	@$(SHANGE) create "$(NAME)"
 
+deploy:
+	@rsync $(RSYNC_OPTS) * "$(APP_HOST):$(or $(APP_PATH), $(error "APP_PATH"))/"
+
 production: APP_HOST = opener.ee
 production: APP_PATH = /var/www/opener-2020
-production:
-	@rsync $(RSYNC_OPTS) * "$(APP_HOST):$(or $(APP_PATH), $(error "APP_PATH"))/"
+production: deploy
+
+staging: APP_HOST = opener.ee
+staging: APP_PATH = /var/www/opener-2020-dev
+staging: deploy
 
 tmp:
 	mkdir -p tmp
