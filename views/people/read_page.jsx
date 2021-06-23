@@ -11,8 +11,10 @@ var {Table} = Page
 var {FlagElement} = Page
 var {DateElement} = Page
 var {MoneyElement} = Page
+var Config = require("root/config")
 var {RolesTable} = require("../organizations/read_page")
 var ROLES = require("root/lib/procurement").ORGANIZATION_ROLES
+var HIDDEN_BIRTHDAYS = new Set(Config.hiddenBirthdays)
 
 module.exports = function(attrs) {
 	var {person} = attrs
@@ -26,7 +28,10 @@ module.exports = function(attrs) {
 			<p class="header-subtitle birthdate">
 				<FlagElement country={person.country} />
 
-				{person.birthdate ? <Fragment>
+				{(
+					person.birthdate &&
+					!HIDDEN_BIRTHDAYS.has(person.country + person.personal_id)
+				) ? <Fragment>
 					Born <DateElement at={person.birthdate} />
 				</Fragment> : null}
 			</p>
