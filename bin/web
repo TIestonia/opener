@@ -46,7 +46,7 @@ app.use(require("root/lib/middleware/error_handler_middleware").bind(null,
 	})
 }))
 
-if (!Number(process.env.IN_PASSENGER) && module.parent) return
+if (module.parent) return
 runServer(app, PORT)
 
 function runServer(app, port) {
