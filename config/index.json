@@ -6,5 +6,5 @@
 	"latvianBusinessRegisterClientSecret": null,
 	"latvianBusinessRegisterClientCertificate": null,
 	"latvianBusinessRegisterClientPrivateKey": null,
-	"hiddenBirthdays": []
+	"showBirthdays": true
 }
